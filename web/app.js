@@ -3,6 +3,10 @@
 // answers on screen are the contract's words, not ours.
 
 import { CHEATS, EXPLORER, LIVE, PEOPLE, POTS, RPCS, SAY, STORY, TOKEN, GITHUB } from "./config.js";
+import {
+  canPlay, closeBox, confirmPayment, createBox, currentAccount, explain, getTestDollars, give,
+  loadWallet, onAccountChange, payBill, playPayee, sendBill, signIn, signOut,
+} from "./act.js";
 
 const main = document.getElementById("main");
 
@@ -388,16 +392,152 @@ function startPage() {
   main.innerHTML = `
   <section class="page-head">
     <h1>Start a money box</h1>
-    <p class="lead">Pick what the money is for. Each kind comes with its rules already set, so the money can only be used for that.</p>
+    <p class="lead">Say what the money is for and who can be paid. Those rules are locked in when you create it, so the money can only be used for that.</p>
   </section>
-  ${templateList()}
-  <section class="section">
-    <div class="slip slip--yellow prose">
-      <div class="slip__head"><h2>Wallet sign-in is being built</h2></div>
-      <p>Creating your own money box needs a NEAR testnet wallet. That screen is the next thing being added.</p>
-      <p>Until then, you can <a href="#/cheat">try to break the rules</a> on two open money boxes, or <a href="#/pots">look inside every money box</a> in the contract.</p>
-    </div>
-  </section>`;
+  <div class="pot-grid">
+    <form class="slip" data-start novalidate>
+      <div class="slip__head"><h2>Your money box</h2><span class="slip__no">NEAR testnet</span></div>
+      <label class="field"><span class="field__label">What is the money for?</span>
+        <input name="title" maxlength="80" required placeholder="Tolu's 2026/27 school fees"></label>
+      <fieldset class="field"><legend class="field__label">Who can be paid? Pick up to three from the verified list</legend>
+        <div class="checks" data-payees><span class="small">Reading the verified list…</span></div></fieldset>
+      <label class="field"><span class="field__label">A reference sent with every payment (optional)</span>
+        <input name="reference" maxlength="40" placeholder="Matric number, patient number, job number"></label>
+      <fieldset class="field"><legend class="field__label">Who presses pay?</legend>
+        <label class="radio"><input type="radio" name="who" value="me" checked> Me</label>
+        <label class="radio"><input type="radio" name="who" value="person"> Someone else, for example the student</label>
+        <label class="radio"><input type="radio" name="who" value="dao"> A group that votes (a Sputnik DAO)</label>
+        <input name="releaser" placeholder="their-account.testnet" hidden></fieldset>
+      <label class="field"><span class="field__label">Target</span>
+        <span class="amount-row"><input name="target" type="number" min="1" step="any" inputmode="decimal" value="300"><span>tUSD</span></span></label>
+      <label class="field"><span class="field__label">Deadline</span>
+        <select name="deadline">
+          <option value="10">In 10 minutes (to try it quickly)</option>
+          <option value="60">In 1 hour</option>
+          <option value="1440">In 1 day</option>
+          <option value="10080" selected>In 1 week</option>
+          <option value="43200">In 30 days</option>
+        </select></label>
+      <label class="radio"><input type="checkbox" name="aon"> If the target isn't reached, pay nothing and give everyone their money back</label>
+      <label class="radio"><input type="checkbox" name="free"> Add a free part, for costs nobody can bill</label>
+      <div data-free hidden>
+        <label class="field"><span class="field__label">Name it</span><input name="freeLabel" maxlength="40" value="Pocket money"></label>
+        <label class="field"><span class="field__label">Amount</span>
+          <span class="amount-row"><input name="freeAmount" type="number" min="0.01" step="any" value="50"><span>tUSD</span></span></label>
+        <label class="field"><span class="field__label">Sent straight to</span><input name="freeTo" placeholder="their-account.testnet"></label>
+      </div>
+      <div class="agree" data-agree></div>
+      <div data-go></div>
+      <p class="small" data-msg aria-live="polite"></p>
+    </form>
+    <aside class="prose">
+      <h3>Any purpose</h3>
+      ${templateList()}
+      <h3>New to NEAR testnet?</h3>
+      <p>You need a free testnet wallet. <a href="https://wallet.meteorwallet.app" target="_blank" rel="noopener">Meteor Wallet</a> makes one in a minute; switch it to testnet. Creating a box costs 0.1 test NEAR for storage, and the unused part comes back.</p>
+    </aside>
+  </div>`;
+
+  const form = main.querySelector("[data-start]");
+  const msg = form.querySelector("[data-msg]");
+  const units = (v) => Math.round(Number(v) * 1e6);
+
+  view(POTS, "get_payees", { from_index: 0, limit: 100 })
+    .then(({ value }) => {
+      form.querySelector("[data-payees]").innerHTML = value
+        .map((x) => `<label class="radio"><input type="checkbox" name="payee" value="${esc(x.account_id)}"> ${esc(x.name)} <span class="small">${esc(x.account_id)}</span></label>`)
+        .join("");
+      update();
+    })
+    .catch(() => (form.querySelector("[data-payees]").innerHTML = `<p class="error">Couldn't read the verified list. Reload to try again.</p>`));
+
+  function read() {
+    const f = new FormData(form);
+    const me = currentAccount();
+    const who = f.get("who");
+    const releaser = who === "me" ? me : (f.get("releaser") || "").trim();
+    const payees = f.getAll("payee");
+    const free = f.get("free") === "on";
+    return {
+      me, who, releaser, payees, free,
+      title: (f.get("title") || "").trim(),
+      reference: (f.get("reference") || "").trim(),
+      target: units(f.get("target")),
+      deadline: Number(f.get("deadline")),
+      aon: f.get("aon") === "on",
+      freeLabel: (f.get("freeLabel") || "").trim(),
+      freeAmount: units(f.get("freeAmount")),
+      freeTo: (f.get("freeTo") || "").trim() || me,
+    };
+  }
+
+  function problems(d) {
+    if (!d.title) return "Say what the money is for.";
+    if (!d.payees.length) return "Pick at least one payee.";
+    if (d.payees.length > 3) return "Pick at most three payees.";
+    if (!d.releaser) return d.who === "me" ? "Sign in first." : "Enter the account that presses pay.";
+    if (d.payees.includes(d.releaser)) return "The person who presses pay can't also be a payee.";
+    if (!(d.target > 0)) return "Enter a target above zero.";
+    if (d.free && (!d.freeLabel || !(d.freeAmount > 0) || !d.freeTo)) return "Give the free part a name, an amount and who it goes to.";
+    return null;
+  }
+
+  function update() {
+    const d = read();
+    form.querySelector("[name=releaser]").hidden = d.who === "me";
+    form.querySelector("[data-free]").hidden = !d.free;
+    const names = d.payees.map((id) => nameOf(id));
+    const who = d.who === "dao" ? `a vote of ${d.releaser || "the DAO"}` : d.who === "me" ? "you" : d.releaser || "the person you name";
+    form.querySelector("[data-agree]").innerHTML = `
+      <h3>What you're agreeing to</h3>
+      <ul>
+        <li>Up to ${money(d.target || 0)} can only ever go to ${esc(names.length ? either(names) : "the payees you pick")}, and only against their own bills.</li>
+        <li>Only ${esc(who)} can pay those bills.</li>
+        ${d.free ? `<li>${money(d.freeAmount || 0)} is “${esc(d.freeLabel)}”, sent straight to ${esc(d.freeTo || "the person you name")} as it comes in.</li>` : ""}
+        <li>${d.aon ? "If the target isn't reached, nothing is paid and everyone gets everything back." : "Bills can be paid from whatever has been raised."}</li>
+        <li>After the deadline, whatever is left goes back to each giver, in proportion.</li>
+        <li>Nobody can change these rules later, including you.</li>
+      </ul>`;
+    const go = form.querySelector("[data-go]");
+    go.innerHTML = currentAccount()
+      ? `<button class="button" type="submit">Create the money box</button>`
+      : `<button class="button" type="button" data-signin>Sign in to create it</button>`;
+    const si = go.querySelector("[data-signin]");
+    if (si) si.addEventListener("click", () => signIn());
+  }
+
+  form.addEventListener("input", update);
+  form.addEventListener("change", update);
+  onAccountChange(() => document.body.contains(form) && update());
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const d = read();
+    const problem = problems(d);
+    if (problem) { msg.textContent = problem; return; }
+    msg.textContent = "Confirm it in your wallet…";
+    try {
+      await createBox({
+        kind: d.who === "dao" ? "Group" : "Personal",
+        title: d.title,
+        payees: d.payees,
+        reference: d.reference,
+        releaser: d.releaser,
+        target: String(d.target),
+        deadline_minutes: d.deadline,
+        all_or_nothing: d.aon,
+        free_part: d.free ? { label: d.freeLabel, amount: String(d.freeAmount), to: d.freeTo } : null,
+      });
+      msg.textContent = "Created. Opening it…";
+      const { value: totals } = await view(POTS, "get_totals");
+      const from = Math.max(0, totals.pots - 20);
+      const { value: recent } = await view(POTS, "get_pots", { from_index: from, limit: 20 });
+      const mine = recent.filter((p) => p.creator === d.me).pop();
+      location.hash = mine ? `#/pot/${mine.id}` : "#/pots";
+    } catch (err) {
+      msg.textContent = explain(err);
+    }
+  });
+  update();
 }
 
 async function receiptPage(potId, index) {
@@ -587,10 +727,15 @@ async function potPage(id) {
           ${p.payments.map((x, i) => `<tr><td>${when(x.at_ns)}<div class="status-line"><span class="stamp stamp--small stamp--ok">Paid</span><span>to ${esc(payeeOf(p, x.to))}</span>${x.confirmed ? `<span class="check">confirmed by them</span>` : ""}<a href="#/receipt/${p.id}/${i}">Open the receipt</a></div></td><td class="num">${money(x.amount)}</td></tr>`).join("")}
         </tbody></table>` : `<p>No payments yet.</p>`}
       </section>
+      <section class="slip slip--yellow" aria-labelledby="act-h" data-actions>
+        <div class="slip__head"><h2 id="act-h">What you can do here</h2></div>
+        <p class="loading">Checking…</p>
+      </section>
       ${p.status === "Open" && !p.deadline_passed && Object.values(LIVE).includes(p.id)
         ? `<p><a class="button" href="#/cheat?story=${Object.keys(LIVE).find((k) => LIVE[k] === p.id)}">Try to break this one</a></p>` : ""}
     </div>
   </div>`;
+  renderActions(p);
   const copy = main.querySelector("[data-copy]");
   copy.addEventListener("click", async () => {
     try {
@@ -598,6 +743,121 @@ async function potPage(id) {
       copy.textContent = "Link copied";
     } catch {
       copy.textContent = "Copy it from the address bar";
+    }
+  });
+}
+
+/** The wallet-powered part of a money box page. */
+async function renderActions(p) {
+  const box = main.querySelector("[data-actions]");
+  if (!box) return;
+  const me = currentAccount();
+  const open = p.status === "Open";
+  const live = open && !p.deadline_passed;
+  const allGone = p.payees.every((x) => !x.verified);
+  const closable = open && (p.deadline_passed || allGone);
+  const openBills = p.requests.filter((r) => r.status === "Open");
+  const blocks = [];
+
+  if (!me) {
+    blocks.push(`<p>Sign in with a NEAR testnet wallet to ${closable ? "close this box and send the rest back" : "give or pay a bill"}.</p>
+      <p><button class="button" type="button" data-act="signin">Sign in</button></p>
+      <p class="small">No testnet wallet? <a href="https://wallet.meteorwallet.app" target="_blank" rel="noopener">Meteor Wallet</a> makes one in a minute; switch it to testnet.</p>`);
+  } else {
+    let bal = 0n, registered = false;
+    try {
+      const [b, s] = await Promise.all([
+        view(TOKEN, "ft_balance_of", { account_id: me }),
+        view(TOKEN, "storage_balance_of", { account_id: me }),
+      ]);
+      bal = BigInt(b.value);
+      registered = Boolean(s.value);
+    } catch {}
+    blocks.push(`<p>Signed in as <strong>${esc(me)}</strong>. You have <strong>${money(bal)}</strong>.</p>
+      ${bal + 500_000_000n <= 1_000_000_000n ? `<p><button class="button button--quiet" type="button" data-act="dollars" data-registered="${registered}">Get 500 test dollars</button></p>` : ""}`);
+    if (live) {
+      const freeLeft = BigInt(p.free_target) - BigInt(p.free_sent);
+      blocks.push(`<form data-give class="mini">
+        <h3>Give</h3>
+        <label class="field"><span class="field__label">Amount</span><span class="amount-row"><input name="amount" type="number" min="0.01" step="any" value="20"><span>tUSD</span></span></label>
+        ${freeLeft > 0n ? `<label class="field"><span class="field__label">For</span><select name="part">
+          <option value="purpose">The purpose (only to ${esc(either(p.payees.map(payeeName)))})</option>
+          <option value="free">“${esc(p.free_label)}”, straight to ${esc(nameOf(p.free_to))}</option></select></label>` : ""}
+        <button class="button" type="submit">Give</button></form>`);
+    }
+    if (me === p.releaser && live) {
+      blocks.push(`<h3>Bills waiting for you to pay</h3>${openBills.length ? openBills.map((r) => `
+        <p>${esc(payeeOf(p, r.payee))}: ${esc(r.note)}, <strong>${money(r.amount)}</strong>
+        <button class="button" type="button" data-act="pay" data-id="${r.id}">Pay this bill</button></p>`).join("") : "<p>No bills yet.</p>"}`);
+    }
+    if (p.payees.some((x) => x.account_id === me) && live) blocks.push(billForm(me, false));
+    const mineToConfirm = p.payments.map((x, i) => ({ ...x, i })).filter((x) => x.to === me && !x.confirmed);
+    mineToConfirm.forEach((x) => blocks.push(`<p>You were paid ${money(x.amount)}. <button class="button" type="button" data-act="confirm" data-id="${x.i}">Confirm you received it</button></p>`));
+    if (closable) blocks.push(`<p>${allGone ? "Every payee has left the verified list." : "The deadline has passed."} Anyone can close the box now.</p>
+      <p><button class="button" type="button" data-act="close">Close the box and send the rest back</button></p>`);
+    blocks.push(`<p><button class="link" type="button" data-act="signout">Sign out</button></p>`);
+  }
+
+  // The open "try to break" boxes keep their one bill, so playing payees is offered on other boxes.
+  if (live && !Object.values(LIVE).includes(p.id)) {
+    p.payees.filter((x) => x.verified && canPlay(x.account_id)).forEach((x) => blocks.push(billForm(x.account_id, true)));
+  }
+  p.payments.map((x, i) => ({ ...x, i })).filter((x) => !x.confirmed && canPlay(x.to) && x.to !== me)
+    .forEach((x) => blocks.push(`<p>Play ${esc(payeeOf(p, x.to))}: <button class="button button--quiet" type="button" data-act="playconfirm" data-to="${esc(x.to)}" data-id="${x.i}">Confirm it received ${money(x.amount)}</button></p>`));
+
+  box.innerHTML = `<div class="slip__head"><h2 id="act-h">What you can do here</h2></div>${blocks.join("")}<p class="small" data-msg aria-live="polite"></p>`;
+  const msg = box.querySelector("[data-msg]");
+
+  function billForm(payee, play) {
+    return `<form data-bill data-payee="${esc(payee)}" data-play="${play}" class="mini">
+      <h3>${play ? `Play ${esc(payeeOf(p, payee))}: send a bill` : "Send a bill"}</h3>
+      ${play ? `<p class="small">This uses the made-up payee's limited demo key. It can only send bills and confirm payments, never move money. No wallet needed.</p>` : ""}
+      <label class="field"><span class="field__label">Amount</span><span class="amount-row"><input name="amount" type="number" min="0.01" step="any" value="${Math.min(Number(BigInt(p.held) / 1_000_000n) || 50, 280)}"><span>tUSD</span></span></label>
+      <label class="field"><span class="field__label">What it's for</span><input name="note" maxlength="80" value="${p.reference ? "Fees for " + esc(p.reference) : "Payment"}"></label>
+      <button class="button ${play ? "button--quiet" : ""}" type="submit">Send the bill</button></form>`;
+  }
+
+  async function run(label, fn) {
+    msg.textContent = label;
+    box.querySelectorAll("button").forEach((b) => (b.disabled = true));
+    try {
+      await fn();
+      msg.textContent = "Done. Reading the box again…";
+      setTimeout(() => potPage(p.id), 1200);
+    } catch (err) {
+      msg.textContent = explain(err);
+      box.querySelectorAll("button").forEach((b) => (b.disabled = false));
+    }
+  }
+
+  box.addEventListener("click", (e) => {
+    const b = e.target.closest("[data-act]");
+    if (!b) return;
+    const act = b.dataset.act;
+    if (act === "signin") return signIn();
+    if (act === "signout") return signOut().then(() => potPage(p.id));
+    if (act === "dollars") return run("Confirm it in your wallet…", () => getTestDollars(b.dataset.registered === "true"));
+    if (act === "pay") return run("Confirm the payment in your wallet…", () => payBill(p.id, Number(b.dataset.id)));
+    if (act === "confirm") return run("Confirm it in your wallet…", () => confirmPayment(p.id, Number(b.dataset.id)));
+    if (act === "close") return run("Confirm it in your wallet…", () => closeBox(p.id));
+    if (act === "playconfirm") return run("Sending with the demo key…", () => playPayee(b.dataset.to, "confirm_payment", { pot_id: p.id, payment_index: Number(b.dataset.id) }));
+  });
+
+  box.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const f = new FormData(e.target);
+    const amount = Math.round(Number(f.get("amount")) * 1e6);
+    if (!(amount > 0)) { msg.textContent = "Enter an amount above zero."; return; }
+    if (e.target.matches("[data-give]")) {
+      return run("Confirm it in your wallet…", () => give(p.id, amount, f.get("part") || "purpose"));
+    }
+    if (e.target.matches("[data-bill]")) {
+      const payee = e.target.dataset.payee;
+      const note = String(f.get("note") || "").trim() || "Payment";
+      if (e.target.dataset.play === "true") {
+        return run("Sending with the demo key…", () => playPayee(payee, "request_payment", { pot_id: p.id, amount: String(amount), note }));
+      }
+      return run("Confirm it in your wallet…", () => sendBill(p.id, amount, note));
     }
   });
 }
@@ -666,6 +926,19 @@ function route() {
   if (parts[0] === "receipt" && /^\d+$/.test(parts[1] || "") && /^\d+$/.test(parts[2] || "")) return receiptPage(parts[1], parts[2]);
   return home();
 }
+
+function renderWho(account) {
+  const el = document.getElementById("who");
+  if (!el) return;
+  el.innerHTML = account
+    ? `<span class="who__name" title="${esc(account)}">${esc(account)}</span>`
+    : `<button class="button button--quiet who__btn" type="button">Sign in</button>`;
+  const btn = el.querySelector("button");
+  if (btn) btn.addEventListener("click", () => signIn());
+}
+onAccountChange(renderWho);
+renderWho(null);
+loadWallet().catch(() => {});
 
 document.getElementById("foot-check").innerHTML = `
   <li><a href="#/proof">Every step of the test run</a></li>

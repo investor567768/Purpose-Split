@@ -111,3 +111,16 @@ export const CHEATS = {
     ],
   },
 };
+
+// Limited keys for the made-up payees. Each key can only send bills, cancel them
+// and confirm payments on the money-box contract: it cannot move any money. They
+// are published on purpose so any visitor can "play the school" on testnet.
+export const DEMO_KEYS = {
+  "llu.purposesplit.testnet": "ed25519:2XmTPR8oTSRdzMzzMgLjoMvNiJ2qndrgxHFv3QByhLjJGZ51BcuTt8AMe6PBC5xoegjGEoXUwn474GjcLXKifJN",
+  "sparks.purposesplit.testnet": "ed25519:3U75UA5xaV63QaVFwqeFseSk6jWtUxbRdBnJmZzCix7g3shm3yxEt5CtKrrgfM2B2yh2aYT9ZthjM2UMeaKEQfxk",
+  "lagoonheights.purposesplit.testnet": "ed25519:5cEXQDDjfgkf4GJPM1usfiVhWCpYSex49CT6GZjj2818KfgrJ5fKs5phWYZPj1gR23BwiZkKKbLySMeogyfPHBCu",
+  "cornercare.purposesplit.testnet": "ed25519:S7Fm6N2dskjJfTcbLsS5i7ip6kLJaBAABzNFJjhBypy7SV2sVGyJowDsPu6WujGm9gCVEC9WfHNUaXn8YxqFNYL"
+};
+
+export const STORAGE_DEPOSIT = "1250000000000000000000"; // 0.00125 NEAR, to register with the token
+export const BOX_DEPOSIT = "100000000000000000000000"; // 0.1 NEAR for a new money box's storage; the unused part comes back

@@ -1,0 +1,109 @@
+Bundled license information:
+
+ieee754/index.js:
+  /*! ieee754. BSD-3-Clause License. Feross Aboukhadijeh <https://feross.org/opensource> */
+
+buffer/index.js:
+  /*!
+   * The buffer module from node.js, for the browser.
+   *
+   * @author   Feross Aboukhadijeh <https://feross.org>
+   * @license  MIT
+   */
+
+mustache/mustache.js:
+  /*!
+   * mustache.js - Logic-less {{mustache}} templates with JavaScript
+   * http://github.com/janl/mustache.js
+   */
+
+depd/lib/browser/index.js:
+  /*!
+   * depd
+   * Copyright(c) 2015 Douglas Christopher Wilson
+   * MIT Licensed
+   */
+
+js-sha256/src/sha256.js:
+  /**
+   * [js-sha256]{@link https://github.com/emn178/js-sha256}
+   *
+   * @version 0.9.0
+   * @author Chen, Yi-Cyuan [emn178@gmail.com]
+   * @copyright Chen, Yi-Cyuan 2014-2017
+   * @license MIT
+   */
+
+react/cjs/react.production.min.js:
+  /**
+   * @license React
+   * react.production.min.js
+   *
+   * Copyright (c) Facebook, Inc. and its affiliates.
+   *
+   * This source code is licensed under the MIT license found in the
+   * LICENSE file in the root directory of this source tree.
+   */
+
+react/cjs/react-jsx-runtime.production.min.js:
+  /**
+   * @license React
+   * react-jsx-runtime.production.min.js
+   *
+   * Copyright (c) Facebook, Inc. and its affiliates.
+   *
+   * This source code is licensed under the MIT license found in the
+   * LICENSE file in the root directory of this source tree.
+   */
+
+scheduler/cjs/scheduler.production.min.js:
+  /**
+   * @license React
+   * scheduler.production.min.js
+   *
+   * Copyright (c) Facebook, Inc. and its affiliates.
+   *
+   * This source code is licensed under the MIT license found in the
+   * LICENSE file in the root directory of this source tree.
+   */
+
+react-dom/cjs/react-dom.production.min.js:
+  /**
+   * @license React
+   * react-dom.production.min.js
+   *
+   * Copyright (c) Facebook, Inc. and its affiliates.
+   *
+   * This source code is licensed under the MIT license found in the
+   * LICENSE file in the root directory of this source tree.
+   */
+
+safe-buffer/index.js:
+  /*! safe-buffer. MIT License. Feross Aboukhadijeh <https://feross.org/opensource> */
+
+@scure/base/lib/index.js:
+@scure/base/lib/esm/index.js:
+  /*! scure-base - MIT License (c) 2022 Paul Miller (paulmillr.com) */
+
+@noble/hashes/utils.js:
+@noble/hashes/utils.js:
+@noble/hashes/utils.js:
+@noble/hashes/utils.js:
+@noble/hashes/esm/utils.js:
+@noble/hashes/esm/utils.js:
+@noble/hashes/esm/utils.js:
+@noble/hashes/esm/utils.js:
+  /*! noble-hashes - MIT License (c) 2022 Paul Miller (paulmillr.com) */
+
+@noble/curves/abstract/utils.js:
+@noble/curves/abstract/modular.js:
+@noble/curves/abstract/curve.js:
+@noble/curves/abstract/edwards.js:
+@noble/curves/abstract/montgomery.js:
+@noble/curves/ed25519.js:
+@noble/curves/esm/abstract/utils.js:
+@noble/curves/esm/abstract/modular.js:
+@noble/curves/esm/abstract/curve.js:
+@noble/curves/esm/abstract/edwards.js:
+@noble/curves/esm/ed25519.js:
+  /*! noble-curves - MIT License (c) 2022 Paul Miller (paulmillr.com) */

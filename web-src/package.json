@@ -1,0 +1,21 @@
+{
+  "name": "purpose-split-web-src",
+  "private": true,
+  "type": "module",
+  "description": "Builds web/vendor/wallet.js, the wallet sign-in bundle for the static website",
+  "scripts": {
+    "build": "node build.mjs"
+  },
+  "dependencies": {
+    "@near-wallet-selector/core": "10.1.4",
+    "@near-wallet-selector/intear-wallet": "10.1.4",
+    "@near-wallet-selector/meteor-wallet": "10.1.4",
+    "@near-wallet-selector/modal-ui": "10.1.4",
+    "@near-wallet-selector/my-near-wallet": "10.1.4",
+    "buffer": "6.0.3",
+    "util": "0.12.5"
+  },
+  "devDependencies": {
+    "esbuild": "0.28.2"
+  }
+}
