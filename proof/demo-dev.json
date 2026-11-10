@@ -1,0 +1,432 @@
+{
+  "contract": "pots-dev5.purposesplit.testnet",
+  "token": "tusd.purposesplit.testnet",
+  "ran_at": "2026-11-10T10:35:24.715Z",
+  "books_match": true,
+  "steps": [
+    {
+      "step": 1,
+      "title": "The registry adds Lagos Lagoon University (demo) to the verified list",
+      "ok": true,
+      "refused": false,
+      "verdict": "Done",
+      "tx": "8sGnagUgwC3x6hTZSE51vhQLQPb3M4gBWngv1SSW2JFX"
+    },
+    {
+      "step": 2,
+      "title": "The registry adds Marina Polytechnic (demo) to the verified list",
+      "ok": true,
+      "refused": false,
+      "verdict": "Done",
+      "tx": "4HBYeerX9U3E3Br54vfh2MBEuvFY12ZFLeCZKyGbu1mC"
+    },
+    {
+      "step": 3,
+      "title": "The registry adds Sparks Electrical (demo) to the verified list",
+      "ok": true,
+      "refused": false,
+      "verdict": "Done",
+      "tx": "7wXjwz47K4Ch1vxnt12DJTgx3tGqs5vK6Ms1JoNKKmNY"
+    },
+    {
+      "step": 4,
+      "title": "The registry adds Lagoon Heights Hospital (demo) to the verified list",
+      "ok": true,
+      "refused": false,
+      "verdict": "Done",
+      "tx": "9ufLuiWZgsWTVHJu819gVqr9uGczUL1GuMtmkFURWuFr"
+    },
+    {
+      "step": 5,
+      "title": "The registry adds Corner Care Pharmacy (demo) to the verified list",
+      "ok": true,
+      "refused": false,
+      "verdict": "Done",
+      "tx": "6nvRJ6Rd9hGCBBJY7ZZvr9Uzrh2KpxzNh329TWzgDFfd"
+    },
+    {
+      "step": 6,
+      "title": "Mum creates a pot for Tolu's fees: 300 fees + 50 pocket money, payable only to the school",
+      "ok": true,
+      "refused": false,
+      "verdict": "Done",
+      "tx": "CM1gx8L4Q6TZryJ5zWvAf4GtMYDpfRPCCJAjz7FkpaKY"
+    },
+    {
+      "step": 7,
+      "title": "Mum adds 200 for fees",
+      "ok": true,
+      "refused": false,
+      "verdict": "Done",
+      "tx": "AZxFuwr1YKz1wDKee8fK35NG6VbT7g7TzU5mkgVTPDDJ"
+    },
+    {
+      "step": 8,
+      "title": "Mum adds 50 pocket money, which goes straight to Tolu",
+      "ok": true,
+      "refused": false,
+      "verdict": "Done",
+      "tx": "GEhuQziT1pqwoFv6Zz4eNT5DPWtWQBvTHaVWiPM7s7bs"
+    },
+    {
+      "step": 9,
+      "title": "Uncle Femi adds 100 for fees",
+      "ok": true,
+      "refused": false,
+      "verdict": "Done",
+      "tx": "E6VenL8nbrjbnQycrVPMAucttcj2thv4oYfnAYJUa4RZ"
+    },
+    {
+      "step": 10,
+      "title": "The school sends Tolu's bill: 280 for the session",
+      "ok": true,
+      "refused": false,
+      "verdict": "Done",
+      "tx": "HNrWLbJxM4xMgT7dW5EgwQRD6L4oYWQCMeEyAsHLAn7Y"
+    },
+    {
+      "step": 11,
+      "title": "Cheat: Tolu sends himself a bill",
+      "ok": false,
+      "refused": true,
+      "verdict": "Refused: \"Only llu.purposesplit.testnet can ask this pot for payment\"",
+      "tx": "FUB1dDpYxTY3fTnndNGxhy4Um7EoMjqYyyxTJCTV4Qdz"
+    },
+    {
+      "step": 12,
+      "title": "Cheat: Tolu sends the fees to himself",
+      "ok": false,
+      "refused": true,
+      "verdict": "Refused: \"This money cannot go to tolu.purposesplit.testnet. This pot pays only llu.purposesplit.testnet.\"",
+      "tx": "36V2GHFwbaax1jUHw63dKkQk5RiQ7K3gCFVyCNyQQJcq"
+    },
+    {
+      "step": 13,
+      "title": "Cheat: Tolu pays a lookalike \"school\" he made, llu-bursary",
+      "ok": false,
+      "refused": true,
+      "verdict": "Refused: \"llu-bursary.purposesplit.testnet is not on the verified list. This pot pays only llu.purposesplit.testnet.\"",
+      "tx": "DzWDUgiwESTegxVgxjfjDYem5PP7Q4VL3pw4ArzE7Mbp"
+    },
+    {
+      "step": 14,
+      "title": "Cheat: Tolu pays a different real school",
+      "ok": false,
+      "refused": true,
+      "verdict": "Refused: \"This pot pays only llu.purposesplit.testnet.\"",
+      "tx": "6cxmSBvTWdq4A52myXhU1NzG65SgYkQmSZdwniLpiHrp"
+    },
+    {
+      "step": 15,
+      "title": "Cheat: Mum tries to take the fees back early",
+      "ok": false,
+      "refused": true,
+      "verdict": "Refused: \"Only tolu.purposesplit.testnet can pay from this pot.\"",
+      "tx": "8SB9TqodzzsUsofqjnxKK8DSZ58giAxbEk398iDTF4aB"
+    },
+    {
+      "step": 16,
+      "title": "Cheat: Tolu pays the school less than it billed, to keep the rest in play",
+      "ok": false,
+      "refused": true,
+      "verdict": "Refused: \"llu.purposesplit.testnet has not asked for 150 tUSD. Money leaves this pot only against a payment request from the payee.\"",
+      "tx": "4uKkUyBJLuc1KiKESSGUXV5bapLjTY8hkHGxnh1E6iXy"
+    },
+    {
+      "step": 17,
+      "title": "Tolu pays the school's bill of 280, with his matric number attached",
+      "ok": true,
+      "refused": false,
+      "verdict": "Done",
+      "tx": "8nRmUuTU9XFKnRWMqrj45rj5FYfbTNUK4USiam5L3HvP"
+    },
+    {
+      "step": 18,
+      "title": "The school confirms the payment on-chain",
+      "ok": true,
+      "refused": false,
+      "verdict": "Done",
+      "tx": "3CpwVYStscz7KGxqFXicyGbnw3CvwRbkDgds4Y1kCqZr"
+    },
+    {
+      "step": 19,
+      "title": "Cheat: Tolu tries to pay out more than is left",
+      "ok": false,
+      "refused": true,
+      "verdict": "Refused: \"Only 20 tUSD is left in this pot.\"",
+      "tx": "6UT7mW7P9qBLChQCGhm9CHj2cTgKUt7aiYZuKXwWxHgG"
+    },
+    {
+      "step": 20,
+      "title": "The chairman creates a pot: 200 for the transformer repair, payable only to Sparks Electrical, released only by the residents' vote",
+      "ok": true,
+      "refused": false,
+      "verdict": "Done",
+      "tx": "2P1H96BbDYUJFEQiU6U3qQ8WANnTB5ajQStoNrLoVyfw"
+    },
+    {
+      "step": 21,
+      "title": "resident1 adds 40",
+      "ok": true,
+      "refused": false,
+      "verdict": "Done",
+      "tx": "zfVuVTDuFLEXVRY38Z4kduMxQW2Ae17bWAjGio1yLZ9"
+    },
+    {
+      "step": 22,
+      "title": "resident2 adds 40",
+      "ok": true,
+      "refused": false,
+      "verdict": "Done",
+      "tx": "HUMbnbFgEXEbkZxscjt15oK22n7ydaz2QouZPxEXnBha"
+    },
+    {
+      "step": 23,
+      "title": "resident3 adds 40",
+      "ok": true,
+      "refused": false,
+      "verdict": "Done",
+      "tx": "35VA2WXsKA5GbStFrVbc2MdWHJ6mYQn2ZZH8AHWtVBVc"
+    },
+    {
+      "step": 24,
+      "title": "Sparks Electrical asks for 100 to buy parts",
+      "ok": true,
+      "refused": false,
+      "verdict": "Done",
+      "tx": "AmXU41rtVtVJaRT8tt2XZtW2cbgVqxdrEjuiqzQK4zyr"
+    },
+    {
+      "step": 25,
+      "title": "Cheat: the vote tries to pay before the target is reached",
+      "ok": false,
+      "refused": true,
+      "verdict": "Refused: \"Nothing can be paid until the target is reached: 120 of 200 tUSD raised so far.\"",
+      "tx": "CxUtoHf4JdHXerQ1mToxGBDJLivBqE1tEP9qRb45T2VD"
+    },
+    {
+      "step": 26,
+      "title": "resident4 adds 40",
+      "ok": true,
+      "refused": false,
+      "verdict": "Done",
+      "tx": "9kFXzhyApVgisfWiyUfqJgX6iwyuahammG3Zd24DVMST"
+    },
+    {
+      "step": 27,
+      "title": "resident5 adds 40",
+      "ok": true,
+      "refused": false,
+      "verdict": "Done",
+      "tx": "4eiJKH13qaCm1t6BHa2ZNQerYQdyy1wmzCLpEJtWU32E"
+    },
+    {
+      "step": 28,
+      "title": "Cheat: the chairman pays himself directly",
+      "ok": false,
+      "refused": true,
+      "verdict": "Refused: \"Only a vote of street-dev.purposesplit.testnet can release this pot.\"",
+      "tx": "4qMN8Qsr5gaH5kf1sp3YES518PqBQBfUxLpDeyWPkmDx"
+    },
+    {
+      "step": 29,
+      "title": "Cheat: a passed vote tries to pay the chairman",
+      "ok": false,
+      "refused": true,
+      "verdict": "Refused: \"This money cannot go to chairman.purposesplit.testnet. This pot pays only sparks.purposesplit.testnet.\"",
+      "tx": "4DbZaqfRKcRoXDxRZpr1qU5wuUyHF6wv4ngdXm5cBZx1"
+    },
+    {
+      "step": 30,
+      "title": "Cheat: the vote tries to pay an amount the electrician never asked for",
+      "ok": false,
+      "refused": true,
+      "verdict": "Refused: \"sparks.purposesplit.testnet has not asked for 150 tUSD. Money leaves this pot only against a payment request from the payee.\"",
+      "tx": "98MwSqDKtyk5ALfVSuqqz9oCrDNyxJnL5gRHfZNCyuF1"
+    },
+    {
+      "step": 31,
+      "title": "The residents' vote pays the request for parts: 100",
+      "ok": true,
+      "refused": false,
+      "verdict": "Done",
+      "tx": "E81BxUPs6k6LBvUzkwQeNGVVp5crzyrv2pGEk6isRo6Q"
+    },
+    {
+      "step": 32,
+      "title": "The light is back: Sparks Electrical asks for the remaining 80",
+      "ok": true,
+      "refused": false,
+      "verdict": "Done",
+      "tx": "B9jAaQW9Msqjk1k121HSqthcycUpBkGZ5fW4JGk2Nk4K"
+    },
+    {
+      "step": 33,
+      "title": "The residents' vote pays it",
+      "ok": true,
+      "refused": false,
+      "verdict": "Done",
+      "tx": "7MBFCVCod8vZ3xwBqgSicFf1YzQYuptDuh6DXTJY7WXT"
+    },
+    {
+      "step": 34,
+      "title": "Cheat: a resident asks for a refund before the deadline",
+      "ok": false,
+      "refused": true,
+      "verdict": "Refused: \"Money goes back only after the deadline, or at once if the payees leave the verified list. Until then it is kept for its purpose.\"",
+      "tx": "6aWam8kEY9a5jhbLDkMs5A5Hu3JtCii2v7iCiecTCoBb"
+    },
+    {
+      "step": 35,
+      "title": "Emeka opens an appeal for his mother's surgery: 500, payable only to the hospital or the pharmacy, plus 80 for food and transport sent straight to the family",
+      "ok": true,
+      "refused": false,
+      "verdict": "Done",
+      "tx": "AgFJjTdn3LuCTeccaiHDXCB8GPs9XPPaVEqXgH8BAbXG"
+    },
+    {
+      "step": 36,
+      "title": "resident1 gives 100 from a link shared on X",
+      "ok": true,
+      "refused": false,
+      "verdict": "Done",
+      "tx": "3jqicAYVobSnT3WMKQ1gbSbWYrXyCEx4j4gistjoZRzP"
+    },
+    {
+      "step": 37,
+      "title": "resident2 gives 100 from a link shared on X",
+      "ok": true,
+      "refused": false,
+      "verdict": "Done",
+      "tx": "Fp6XH8dwrXu8GiBAXHuqKpdjSviiucKKEeAQJcvKfzF"
+    },
+    {
+      "step": 38,
+      "title": "resident3 gives 100 from a link shared on X",
+      "ok": true,
+      "refused": false,
+      "verdict": "Done",
+      "tx": "Droiirxctur57QPfL9XHAoWQnZZEiSJUnZxHScyRmRQz"
+    },
+    {
+      "step": 39,
+      "title": "The hospital sends its bill: 380 for the operation",
+      "ok": true,
+      "refused": false,
+      "verdict": "Done",
+      "tx": "8xZGRnbTU2ce3xWcYLtdL85DAJuX1Ly9HWbT7yu2YSKT"
+    },
+    {
+      "step": 40,
+      "title": "Cheat: Emeka pays the hospital before the 500 target is reached",
+      "ok": false,
+      "refused": true,
+      "verdict": "Refused: \"Nothing can be paid until the target is reached: 300 of 500 tUSD raised so far.\"",
+      "tx": "4e6S6htCRq2gLdQpEPAyF4CDEAv33dEYaJbMSepd4DD9"
+    },
+    {
+      "step": 41,
+      "title": "resident4 gives 100",
+      "ok": true,
+      "refused": false,
+      "verdict": "Done",
+      "tx": "APoGknziXdgr3KHGoyFf7vVqUozPEaMCeNazAqeQHk19"
+    },
+    {
+      "step": 42,
+      "title": "resident5 gives 100",
+      "ok": true,
+      "refused": false,
+      "verdict": "Done",
+      "tx": "4KyKf2pCmYqcRBLpEqUNzqo29PEv2PrT4moRaK8iVizA"
+    },
+    {
+      "step": 43,
+      "title": "resident1 also gives 80 for food and transport, which goes straight to the family",
+      "ok": true,
+      "refused": false,
+      "verdict": "Done",
+      "tx": "5u3M8hcH6pbz2dCjGDejxDnpf1mRfFxhkdGAaXVURaWK"
+    },
+    {
+      "step": 44,
+      "title": "Cheat: Emeka sends the donations to his own account",
+      "ok": false,
+      "refused": true,
+      "verdict": "Refused: \"This money cannot go to emeka.purposesplit.testnet. This pot pays only lagoonheights.purposesplit.testnet or cornercare.purposesplit.testnet.\"",
+      "tx": "GQtUBiccmM6inAHSAAExcNWmKGgsmggJmmLuryFmUY4o"
+    },
+    {
+      "step": 45,
+      "title": "Cheat: Emeka sends the surgery money to the family's account instead",
+      "ok": false,
+      "refused": true,
+      "verdict": "Refused: \"This money cannot go to ngozi-family.purposesplit.testnet. This pot pays only lagoonheights.purposesplit.testnet or cornercare.purposesplit.testnet.\"",
+      "tx": "DVY8RGWekmag7KnnBjfGjaJeTvuEk2mRBHHR6YSFpgaK"
+    },
+    {
+      "step": 46,
+      "title": "Cheat: Emeka pays the hospital's bill to the pharmacy",
+      "ok": false,
+      "refused": true,
+      "verdict": "Refused: \"cornercare.purposesplit.testnet has not asked for 380 tUSD. Money leaves this pot only against a payment request from the payee.\"",
+      "tx": "A4D5PzhZABYeM4rC82HYANG537UMZCz6WNim9QhhTyrt"
+    },
+    {
+      "step": 47,
+      "title": "Emeka pays the hospital's bill of 380",
+      "ok": true,
+      "refused": false,
+      "verdict": "Done",
+      "tx": "9Wj2J2tsXPoYsdPtYp9HWgz9Zkkaiwn7kCFfWAGVSimt"
+    },
+    {
+      "step": 48,
+      "title": "The hospital confirms the payment on-chain",
+      "ok": true,
+      "refused": false,
+      "verdict": "Done",
+      "tx": "J1DXYRe2tp7ed6RMTf8uoaqiuCZZwvV7jbZV9QaqpeQt"
+    },
+    {
+      "step": 49,
+      "title": "The pharmacy sends its bill: 70 for medicine",
+      "ok": true,
+      "refused": false,
+      "verdict": "Done",
+      "tx": "D8JMFRJGeeJ96otibQsEmzMD9HMPZFk6R8nQHzkdVwkU"
+    },
+    {
+      "step": 50,
+      "title": "Emeka pays the pharmacy's bill of 70",
+      "ok": true,
+      "refused": false,
+      "verdict": "Done",
+      "tx": "7YtgdUBJTXrEeBcJkKRXcteDqtMcuVjUHFuJnJdbQRiK"
+    },
+    {
+      "step": 51,
+      "title": "After the deadline, anyone settles the family pot: the unused 20 goes back to Mum and Uncle Femi",
+      "ok": true,
+      "refused": false,
+      "verdict": "Done",
+      "tx": "8P4moESbSvdaWEWC1zsGvLp6UBPrdFA6fFiV3Nf64dzi"
+    },
+    {
+      "step": 52,
+      "title": "After the deadline, anyone settles the street pot: the unused 20 goes back, 4 to each resident",
+      "ok": true,
+      "refused": false,
+      "verdict": "Done",
+      "tx": "3VB25y9DVxi7zpCRSpYKnMVpgBhac93Tmr1Ftme5L7wt"
+    },
+    {
+      "step": 53,
+      "title": "After the deadline, anyone settles the appeal: the unused 50 goes back, 10 to each giver",
+      "ok": true,
+      "refused": false,
+      "verdict": "Done",
+      "tx": "8sDsA7wCep69ocFtv8ParWGY7fhEG42rFFS6VBUr8L5c"
+    }
+  ]
+}

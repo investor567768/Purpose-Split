@@ -1,0 +1,113 @@
+// Where the website reads from. Everything is read straight from NEAR testnet
+// in the visitor's browser; there is no server of ours in between.
+
+export const RPCS = ["https://test.rpc.fastnear.com", "https://rpc.testnet.near.org"];
+export const EXPLORER = "https://testnet.nearblocks.io";
+export const ROOT = "purposesplit.testnet";
+export const POTS = `pots-dev5.${ROOT}`;
+export const TOKEN = `tusd.${ROOT}`;
+export const GITHUB = ""; // filled in once the repository is public
+
+// Pots from the full demo run (finished: paid, settled, refunded).
+export const STORY = { family: 0, street: 1, appeal: 2 };
+// Open pots kept funded for 30 days, so anyone can try to cheat them live.
+export const LIVE = { family: 3, street: 4, appeal: 5 };
+
+const s = (name) => `${name}.${ROOT}`;
+
+// Plain names for the demo accounts. The schools and the vendor are made up.
+export const PEOPLE = {
+  [s("mum")]: "Mum",
+  [s("uncle-femi")]: "Uncle Femi",
+  [s("tolu")]: "Tolu, the student",
+  [s("chairman")]: "The chairman",
+  [s("street-dev")]: "Adeyemi Street's vote",
+  [s("registry-dev")]: "The school-list council",
+  [s("llu")]: "Lagos Lagoon University",
+  [s("marinapoly")]: "Marina Polytechnic",
+  [s("llu-bursary")]: "“LLU Bursary”, an account Tolu made",
+  [s("kunle")]: "Kunle, a friend",
+  [s("sureodds")]: "SureOdds, a betting site",
+  [s("quicktrade")]: "QuickTrade, a crypto trading app",
+  [s("sparks")]: "Sparks Electrical",
+  [s("lagoonheights")]: "Lagoon Heights Hospital",
+  [s("cornercare")]: "Corner Care Pharmacy",
+  [s("emeka")]: "Emeka, who runs the appeal",
+  [s("ngozi-family")]: "Mama Ngozi's family",
+  [s("resident1")]: "Mrs Okafor, no. 3",
+  [s("resident2")]: "Mr Bello, no. 5",
+  [s("resident3")]: "Mama Ronke, no. 8",
+  [s("resident4")]: "Mr Adeyemi, no. 12",
+  [s("resident5")]: "Chiamaka, no. 14",
+};
+
+// Short names used when the contract's answer is put into plain words.
+export const SAY = {
+  [s("tolu")]: "Tolu",
+  [s("mum")]: "Mum",
+  [s("llu")]: "Lagos Lagoon University",
+  [s("marinapoly")]: "Marina Polytechnic",
+  [s("llu-bursary")]: "“LLU Bursary”",
+  [s("kunle")]: "Kunle (the friend)",
+  [s("sureodds")]: "SureOdds (the betting site)",
+  [s("quicktrade")]: "QuickTrade (the trading app)",
+  [s("chairman")]: "the chairman",
+  [s("street-dev")]: "the neighbours",
+  [s("sparks")]: "Sparks Electrical",
+  [s("resident1")]: "Mrs Okafor",
+  [s("lagoonheights")]: "Lagoon Heights Hospital",
+  [s("cornercare")]: "Corner Care Pharmacy",
+  [s("emeka")]: "Emeka",
+  [s("ngozi-family")]: "Mama Ngozi's family",
+};
+
+// The choices offered in "Try it yourself".
+export const CHEATS = {
+  family: {
+    pot: LIVE.family,
+    label: "Tolu's school fees",
+    amount: 280,
+    signers: [
+      { id: s("tolu"), label: "Tolu, the student", next: "Tolu would now sign this payment with his own wallet." },
+      { id: s("mum"), label: "Mum", next: "Mum would now sign this payment with her own wallet." },
+    ],
+    destinations: [
+      { id: s("tolu"), label: "Tolu's own wallet" },
+      { id: s("kunle"), label: "A friend who wants a loan" },
+      { id: s("sureodds"), label: "A betting site" },
+      { id: s("quicktrade"), label: "A crypto trading app" },
+      { id: s("llu-bursary"), label: "A fake account that looks like the school's" },
+      { id: s("marinapoly"), label: "A different school" },
+      { id: s("llu"), label: "His real school, Lagos Lagoon University" },
+    ],
+  },
+  street: {
+    pot: LIVE.street,
+    label: "Adeyemi Street's transformer",
+    amount: 100,
+    signers: [
+      { id: s("chairman"), label: "The chairman, on his own", next: "The chairman would now sign this payment with his own wallet." },
+      { id: s("street-dev"), label: "The neighbours, after their vote passed", next: "The street's DAO would now carry out the vote and make this payment." },
+    ],
+    destinations: [
+      { id: s("chairman"), label: "The chairman's own wallet" },
+      { id: s("resident1"), label: "Mrs Okafor, one of the neighbours" },
+      { id: s("sparks"), label: "The real electrician, Sparks Electrical" },
+    ],
+  },
+  appeal: {
+    pot: LIVE.appeal,
+    label: "Mama Ngozi's surgery",
+    amount: 380,
+    signers: [
+      { id: s("emeka"), label: "Emeka, who runs the appeal", next: "Emeka would now sign this payment with his own wallet." },
+      { id: s("ngozi-family"), label: "Mama Ngozi's family", next: "" },
+    ],
+    destinations: [
+      { id: s("emeka"), label: "Emeka's own wallet" },
+      { id: s("ngozi-family"), label: "The family's own account" },
+      { id: s("cornercare"), label: "The pharmacy, for the hospital's bill" },
+      { id: s("lagoonheights"), label: "The hospital, for its own bill" },
+    ],
+  },
+};

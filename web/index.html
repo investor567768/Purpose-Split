@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Purpose Split</title>
+  <meta name="description" content="Money raised for a purpose can only be spent on that purpose. School fees that can only reach the school, and street funds that only the named electrician can be paid from, on NEAR.">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="preload" href="fonts/archivo-variable.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <svg class="defs" aria-hidden="true" focusable="false">
+    <filter id="ink" x="-10%" y="-10%" width="120%" height="120%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" seed="7" result="noise"/>
+      <feDisplacementMap in="SourceGraphic" in2="noise" scale="3" xChannelSelector="R" yChannelSelector="G" result="rough"/>
+      <feTurbulence type="fractalNoise" baseFrequency="0.35" numOctaves="1" seed="2" result="blot"/>
+      <feColorMatrix in="blot" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 -1.3 1.8" result="holes"/>
+      <feComposite in="rough" in2="holes" operator="in"/>
+    </filter>
+    <filter id="ink-light" x="-10%" y="-10%" width="120%" height="120%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="1" seed="4" result="noise"/>
+      <feDisplacementMap in="SourceGraphic" in2="noise" scale="1.2" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+  </svg>
+
+  <a class="skip" href="#main">Skip to content</a>
+  <header class="top">
+    <a class="wordmark" href="#/" aria-label="Purpose Split, home">
+      <span class="wordmark__mark" aria-hidden="true"></span>Purpose Split<span class="wordmark__tag">Money with rules</span>
+    </a>
+    <nav aria-label="Main">
+      <a href="#/cheat" data-nav="cheat">Try to break the rules</a>
+      <a href="#/pots" data-nav="pots">Money boxes</a>
+      <a href="#/proof" data-nav="proof">Proof</a>
+    </nav>
+  </header>
+
+  <main id="main" tabindex="-1"></main>
+
+  <footer class="foot">
+    <div class="foot__grid">
+      <div>
+        <p class="foot__name">Purpose Split</p>
+        <p>Money with rules. Families and communities raise money for one purpose, and the contract makes sure it is spent on that.</p>
+      </div>
+      <div>
+        <h2>Use it</h2>
+        <ul>
+          <li><a href="#/cheat">Try to break the rules</a></li>
+          <li><a href="#/start">Start a money box</a></li>
+          <li><a href="#/pots">Money boxes</a></li>
+        </ul>
+      </div>
+      <div>
+        <h2>Check it</h2>
+        <ul id="foot-check"></ul>
+      </div>
+    </div>
+    <p>Runs on NEAR testnet with test dollars that have no value. The schools, hospital, pharmacy, electrician and people are made up.</p>
+  </footer>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>

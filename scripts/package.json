@@ -1,0 +1,12 @@
+{
+  "name": "purpose-split-scripts",
+  "private": true,
+  "type": "module",
+  "description": "Testnet setup and demo scripts for Purpose Split",
+  "dependencies": {
+    "near-api-js": "7.4.0"
+  },
+  "devDependencies": {
+    "binaryen": "^132.0.0"
+  }
+}
