@@ -30,13 +30,35 @@
     <a class="wordmark" href="#/" aria-label="Purpose Split, home">
       <span class="wordmark__mark" aria-hidden="true"></span>Purpose Split<span class="wordmark__tag">Money with rules</span>
     </a>
-    <nav aria-label="Main">
-      <a href="#/cheat" data-nav="cheat">Try to break the rules</a>
-      <a href="#/pots" data-nav="pots">Money boxes</a>
-      <a href="#/proof" data-nav="proof">Proof</a>
+    <div class="top__right">
       <span id="who" class="who"></span>
-    </nav>
+      <button class="menu-btn" type="button" aria-expanded="false" aria-controls="menu" data-menu-open>
+        <span class="menu-btn__lines" aria-hidden="true"></span>Menu
+      </button>
+    </div>
   </header>
+
+  <div class="menu" id="menu" hidden>
+    <div class="menu__inner">
+      <div class="menu__head">
+        <span class="menu__title">Contents</span>
+        <button class="menu__close" type="button" data-menu-close>Close</button>
+      </div>
+      <nav aria-label="Main">
+        <ol class="menu__list">
+          <li><a href="#/" data-nav="home"><span class="menu__word">Home</span><span class="menu__lead" aria-hidden="true"></span><span class="menu__label">School fees</span></a></li>
+          <li><a href="#/try" data-nav="try"><span class="menu__word">How to try it</span><span class="menu__lead" aria-hidden="true"></span><span class="menu__label">Wallet and test money</span></a></li>
+          <li><a href="#/cheat" data-nav="cheat"><span class="menu__word">Break the rules</span><span class="menu__lead" aria-hidden="true"></span><span class="menu__label">Try to cheat a box</span></a></li>
+          <li><a href="#/pots" data-nav="pots"><span class="menu__word">Money boxes</span><span class="menu__lead" aria-hidden="true"></span><span class="menu__label">Live on NEAR</span></a></li>
+          <li><a href="#/street" data-nav="street"><span class="menu__word">Street fund</span><span class="menu__lead" aria-hidden="true"></span><span class="menu__label">Neighbours pay the electrician</span></a></li>
+          <li><a href="#/appeal" data-nav="appeal"><span class="menu__word">Appeals</span><span class="menu__lead" aria-hidden="true"></span><span class="menu__label">Give to a cause, not a person</span></a></li>
+          <li><a href="#/start" data-nav="start"><span class="menu__word">Start a box</span><span class="menu__lead" aria-hidden="true"></span><span class="menu__label">Make your own</span></a></li>
+          <li><a href="#/proof" data-nav="proof"><span class="menu__word">Proof</span><span class="menu__lead" aria-hidden="true"></span><span class="menu__label">Every step, on-chain</span></a></li>
+        </ol>
+      </nav>
+      <p class="menu__foot">Money with rules. Runs on NEAR testnet with test dollars.</p>
+    </div>
+  </div>
 
   <main id="main" tabindex="-1"></main>
 
@@ -49,9 +71,12 @@
       <div>
         <h2>Use it</h2>
         <ul>
+          <li><a href="#/try">How to try it</a></li>
           <li><a href="#/cheat">Try to break the rules</a></li>
           <li><a href="#/start">Start a money box</a></li>
           <li><a href="#/pots">Money boxes</a></li>
+          <li><a href="#/street">Street fund</a></li>
+          <li><a href="#/appeal">Appeals</a></li>
         </ul>
       </div>
       <div>

@@ -110,7 +110,29 @@ function evidenceLine(x) {
 
 // ------------------------------------------------------------------ try to cheat
 
-function cheatSlip(storyKey = "family", { heading = "h2" } = {}) {
+// Short ideas for "Try to break the rules", one list per money box. Roles, not names.
+const IDEAS = {
+  family: [
+    "The student sends the fees to a betting site.",
+    "The student sends the fees to their own wallet.",
+    "The student pays a fake account that looks like the school's.",
+    "The student pays the school less than its bill, to keep the rest.",
+  ],
+  street: [
+    "The chairman pays himself, on his own.",
+    "The vote passes, but it tries to pay the chairman.",
+    "The vote pays one of the neighbours.",
+    "Take the money back before the deadline.",
+  ],
+  appeal: [
+    "The organiser sends the donations to himself.",
+    "The organiser pays the hospital's bill to the pharmacy.",
+    "The organiser sends it all to the family's own account.",
+    "Take the money back before the deadline.",
+  ],
+};
+
+function cheatSlip(storyKey = "family", { heading = "h2", tabs = true } = {}) {
   const id = `cheat-${Math.random().toString(36).slice(2, 8)}`;
   return `
   <form class="slip" id="${id}" data-story="${storyKey}" aria-describedby="${id}-hint">
@@ -119,11 +141,11 @@ function cheatSlip(storyKey = "family", { heading = "h2" } = {}) {
       <span class="slip__no" data-potno></span>
     </div>
     <p class="small" id="${id}-hint">Pick a person and what they try. The real contract answers yes or no. Nothing is actually sent.</p>
-    <div class="switch" role="group" aria-label="Which money box">
-      <button type="button" data-story-btn="family">Tolu's school fees</button>
-      <button type="button" data-story-btn="street">The street's transformer</button>
-      <button type="button" data-story-btn="appeal">The surgery appeal</button>
-    </div>
+    ${tabs ? `<div class="switch" role="group" aria-label="Which money box">
+      <button type="button" data-story-btn="family">School fees</button>
+      <button type="button" data-story-btn="street">Street fund</button>
+      <button type="button" data-story-btn="appeal">Appeal</button>
+    </div>` : ""}
     <label class="field"><span class="field__label">Who is trying</span><select data-signer></select></label>
     <label class="field"><span class="field__label">What they try</span>
       <select data-action>
@@ -137,6 +159,7 @@ function cheatSlip(storyKey = "family", { heading = "h2" } = {}) {
     </label>
     <button class="button" type="submit">Try it</button>
     <div class="verdict" data-verdict aria-live="polite"></div>
+    <details class="ideas"><summary>Ideas to try <span data-ideas-n></span></summary><ol data-ideas></ol></details>
   </form>`;
 }
 
@@ -164,6 +187,8 @@ function wireCheat(form) {
     amount.value = c.amount;
     action.value = "send";
     potNo.innerHTML = `<a href="#/pot/${c.pot}">Money box no. ${c.pot}</a>`;
+    form.querySelector("[data-ideas]").innerHTML = IDEAS[key].map((t) => `<li>${esc(t)}</li>`).join("");
+    form.querySelector("[data-ideas-n]").textContent = `(${IDEAS[key].length})`;
     showFields();
   }
 
@@ -240,14 +265,18 @@ async function booksLine() {
 
 const QUESTIONS = [
   ["Is this real money?", "No. This runs on NEAR testnet with test dollars (tUSD) that are free and have no value, so you can try every step safely. A real launch would use USDC, a digital dollar that already exists on NEAR."],
+  ["Why not just pay the school directly?", "If one parent pays one school, a bank transfer is fine. A money box helps when several people chip in, including relatives abroad. Everyone puts money into one place, everyone can see the school was paid, and whatever isn't used goes back to each of them on its own. Nobody has to trust the person holding the money."],
   ["Can the student send the money anywhere else?", "No. The money box pays only the school named on it, and only against a bill the school itself sent. Try it above: every other destination is refused."],
   ["Can the parent take the money back?", "Not before the deadline. Once it's in the box, it is kept for its purpose. After the deadline, whatever wasn't used goes back to each person in proportion to what they gave."],
   ["How do you know the account really belongs to the school?", "The contract can't know that by itself, so the list has to be trustworthy. A school is added only by a council vote, and only with a link to where the school itself publishes its account. You see that link before you send. If a school is ever removed, families can take their money back at once."],
-  ["What if the fees are less than what was sent, or the plan falls through?", "The rest comes back automatically. That covers a bill smaller than the box, a street fund that doesn't reach its target, and a school or contractor that is removed from the list."],
   ["Can the people who built this take the money?", "The contract has no function that sends a box's money anywhere except its named payees, its stated free part, or back to the givers. In the final version the contract's keys are deleted so nobody can change that. This practice version is not locked yet."],
   ["What does it cost?", "We charge nothing. Each action is a NEAR transaction with a network fee well under a cent, and creating a money box needs a small one-time storage deposit in NEAR."],
-  ["Can I check all this?", `Yes. Every step of the test run is on the public explorer, and the contract is open source with a test for every rule. <a href="#/proof">Open the proof page</a>.`],
+  ["Can I check all this?", `Yes. Every step of the test run is on the public explorer, the books are checked live, and the contract is open source with a test for every rule. <a href="#/proof">Open the proof page</a>.`],
 ];
+
+const faq = (list) => `<div class="faq">${list
+  .map(([q, ans], i) => `<details><summary><span class="faq__n">Q${i + 1}</span><span class="faq__q">${q}</span></summary><p>${ans}</p></details>`)
+  .join("")}</div>`;
 
 const TEMPLATES = [
   ["School fees", "Relatives fund it. The student pays the school's bill and nothing else.", "Working in this demo"],
@@ -259,114 +288,73 @@ const TEMPLATES = [
 
 function home() {
   setTitle("");
-  markNav("");
+  markNav("home");
   main.innerHTML = `
   <section class="hero">
     <h1>Parents send school fees. The money can only pay the school.</h1>
-    <p class="lead">Your child pays the school from it, and it can't go anywhere else. You see when the school has it, and whatever isn't used comes back to you.</p>
+    <p class="lead">The family puts the fees into one money box. The student pays the school from it, and it can't go anywhere else. Everyone sees when the school has it, and whatever isn't used comes back.</p>
     <p class="cta">
-      <a class="button" href="#/cheat">Try to break the rules</a>
-      <a class="button button--quiet" href="#/start">Start a money box</a>
+      <a class="button" href="#try-h">Try to break the rules</a>
+      <a class="button button--quiet" href="#/try">How to try it</a>
     </p>
   </section>
 
   <ol class="story" aria-label="How it works">
     <li class="slip">
-      <h2>Mum sends Tolu's fees</h2>
-      <p>She puts 300 into a locked money box for his school fees. Uncle Femi adds to the same box.</p>
+      <h2>The family sends the fees</h2>
+      <p>A parent puts 300 into a money box for the school fees. An uncle abroad adds to the same box.</p>
     </li>
     <li class="slip">
       <h2>It can't go anywhere else</h2>
-      <p>Tolu's own wallet, a friend who wants a loan, a betting site: the money box says no to all of them.</p>
+      <p>The student's own wallet, a friend who wants a loan, a fake account: the money box says no to all of them.</p>
       <span class="stamp stamp--small stamp--no">Refused</span>
     </li>
     <li class="slip">
-      <h2>Tolu pays the school's bill</h2>
-      <p>The school sends a bill for 280. Tolu pays it, the school stamps the receipt, and the 20 left over goes back.</p>
+      <h2>The school gets paid</h2>
+      <p>The school sends a bill for 280. The student pays it, the school confirms it, and the 20 left over goes back.</p>
       <span class="stamp stamp--small stamp--ok">Paid</span>
     </li>
   </ol>
 
   <section class="section" aria-labelledby="try-h">
     <h2 id="try-h">Don't take our word for it</h2>
-    <p class="lead">Be Tolu. Choose where to send his school fees and see what happens. The answer comes from the real money box on NEAR, live.</p>
+    <p class="lead">Choose where the school fees go and see what happens. The answer comes from the real money box on NEAR, live.</p>
     <div class="pot-grid">
-      ${cheatSlip("family", { heading: "h3" })}
+      ${cheatSlip("family", { heading: "h3", tabs: false })}
       <aside class="prose">
         <h3>What is the money box?</h3>
-        <p>It's a small program on the NEAR blockchain, called a smart contract. It holds the fees and follows its rules on its own. Nobody can override it: not Tolu, not Mum, not us.</p>
-        <p>Pocket money is separate. If Mum adds some, it goes straight to Tolu to spend as he likes.</p>
+        <p>A small program on the NEAR blockchain, called a smart contract. It holds the fees and follows its rules on its own. Nobody can override it: not the student, not the parent, not us.</p>
         <h3>How do we know it's really the school?</h3>
-        <p>The money box only pays accounts on a verified list. A school gets on the list when a council votes it in, and only with a link to where the school itself publishes that account. You see the link before you send.</p>
+        <p>The money box only pays accounts on a verified list. A school gets on the list when a council votes it in, with a link to where the school itself publishes that account. You see the link before you send.</p>
         <p data-evidence class="small"></p>
-        <p><a href="#/pot/${STORY.family}">See Tolu's finished fees, paid and confirmed by the school</a></p>
+        <p><a href="#/pot/${STORY.family}">See a finished box: fees paid and confirmed by the school</a></p>
       </aside>
     </div>
   </section>
 
   <section class="section" aria-labelledby="back-h">
     <h2 id="back-h">What if it doesn't work out?</h2>
-    <p class="lead">Nobody's money gets stuck. The contract sends it back on its own, to each person in proportion to what they gave.</p>
+    <p class="lead">Nobody's money gets stuck. It goes back on its own, to each person in proportion to what they gave.</p>
     <ul class="outcomes">
       <li><h3>The bill is smaller than the box</h3><p>After the deadline, the part that wasn't used goes back to everyone who gave.</p></li>
-      <li><h3>The target isn't reached</h3><p>A street fund that falls short pays nobody. Every neighbour gets everything back.</p></li>
-      <li><h3>The school or contractor is removed</h3><p>If the council takes them off the verified list, givers can take their money back at once.</p></li>
+      <li><h3>The target isn't reached</h3><p>If the box was set to "all or nothing", nobody is paid and everyone gets everything back.</p></li>
+      <li><h3>The school is removed from the list</h3><p>Givers can take their money back at once, without waiting for the deadline.</p></li>
     </ul>
   </section>
 
-  <section class="section" aria-labelledby="street-h">
-    <h2 id="street-h">The same rules work for a street fund</h2>
-    <div class="pair">
-      <div class="prose">
-        <p>Adeyemi Street's transformer is broken. Five neighbours each put 40 into one money box for the repair.</p>
-        <p>The electrician asks for 100 to buy parts. The neighbours vote, and only then does the box pay him. The chairman can't take the money, even if a vote says so.</p>
-        <p><a class="button button--quiet" href="#/cheat?story=street">Try to break the street fund</a></p>
-      </div>
-      <article class="slip slip--yellow">
-        <div class="slip__head"><h3>Adeyemi Street's transformer</h3></div>
-        ${field("Who adds money", "Five neighbours, 40 each")}
-        ${field("Who can be paid", "Only Sparks Electrical, against its own request")}
-        ${field("Who decides", "The neighbours, by vote")}
-        <p><a href="#/pot/${STORY.street}">See the finished street fund</a></p>
-      </article>
-    </div>
-  </section>
-
-  <section class="section" aria-labelledby="appeal-h">
-    <h2 id="appeal-h">An appeal people can trust</h2>
-    <div class="pair">
-      <div class="prose">
-        <p>Emeka shares a link on X: his mother needs surgery. Strangers give. The money can only go to the hospital and the pharmacy, against their own bills.</p>
-        <p>A fixed 80 for food and transport goes straight to the family. Everyone sees that split before they give. Emeka can't send the rest to himself, and whatever isn't used goes back to the givers.</p>
-        <p><a class="button button--quiet" href="#/cheat?story=appeal">Try to break the appeal</a></p>
-      </div>
-      <article class="slip">
-        <div class="slip__head"><h3>Mama Ngozi's surgery</h3></div>
-        ${field("Who gives", "Anyone with the link")}
-        ${field("Who can be paid", "Only Lagoon Heights Hospital or Corner Care Pharmacy, against their bills")}
-        ${field("Food and transport", "80 more, sent straight to the family, stated up front")}
-        <p><a href="#/pot/${STORY.appeal}">See the finished appeal and its receipts</a></p>
-      </article>
-    </div>
-  </section>
-
-  <section class="section" aria-labelledby="rules-h">
-    <h2 id="rules-h">Money with rules, for any purpose</h2>
-    <p class="lead">Every money box has the same parts: who can be paid, who decides, a target, a deadline and an optional free part for costs nobody can bill. Change the parts and it fits whatever the money is for.</p>
-    ${templateList()}
+  <section class="section" aria-labelledby="any-h">
+    <h2 id="any-h">Works for any purpose</h2>
+    <p class="lead">School fees are one example. Any money with a named payee can have rules.</p>
+    <ul class="uses">
+      <li><a href="#/street"><span class="uses__n">01</span><h3>Street fund</h3><p>Neighbours chip in. Only their vote can pay the electrician.</p><span class="uses__go">See how</span></a></li>
+      <li><a href="#/appeal"><span class="uses__n">02</span><h3>Appeals</h3><p>Strangers give to a surgery. The money can only pay the hospital.</p><span class="uses__go">See how</span></a></li>
+      <li><a href="#/start"><span class="uses__n">03</span><h3>Your own</h3><p>Rent, a wedding, a group purchase. Pick who can be paid.</p><span class="uses__go">Start one</span></a></li>
+    </ul>
   </section>
 
   <section class="section" aria-labelledby="q-h">
     <h2 id="q-h">Questions</h2>
-    <div class="faq">
-      ${QUESTIONS.map(([q, ans]) => `<details><summary>${q}</summary><p>${ans}</p></details>`).join("")}
-    </div>
-  </section>
-
-  <section class="section" aria-labelledby="books-h">
-    <h2 id="books-h">Check it yourself</h2>
-    <div class="books" data-books><p class="loading">Reading the contract…</p></div>
-    <p><a href="#/proof">See every step of the test run, each one on the public NEAR explorer</a></p>
+    ${faq(QUESTIONS)}
   </section>`;
 
   wireCheat(main.querySelector("form.slip"));
@@ -375,9 +363,52 @@ function home() {
       if (p && p.payees[0]) main.querySelector("[data-evidence]").innerHTML = evidenceLine(p.payees[0]);
     })
     .catch(() => {});
-  booksLine()
-    .then((b) => (main.querySelector("[data-books]").innerHTML = b.html))
-    .catch(() => (main.querySelector("[data-books]").innerHTML = `<p class="error">Couldn't reach NEAR testnet just now.</p>`));
+}
+
+function streetPage() {
+  setTitle("Street fund");
+  markNav("street");
+  main.innerHTML = `
+  <section class="page-head">
+    <p class="kicker">Example 01</p>
+    <h1>A street fund only the vote can spend</h1>
+    <p class="lead">A street's transformer is broken. Five neighbours each put 40 into one money box. The electrician asks for 100 to buy parts, the neighbours vote, and only then does the box pay him. The chairman can't take the money, even if a vote says so.</p>
+  </section>
+  <div class="pot-grid">
+    ${cheatSlip("street", { heading: "h2", tabs: false })}
+    <aside class="slip slip--yellow">
+      <div class="slip__head"><h2>The rules on this box</h2></div>
+      ${field("Who adds money", "Five neighbours, 40 each")}
+      ${field("Who can be paid", "Only Sparks Electrical, against its own request")}
+      ${field("Who decides", "The neighbours, by a DAO vote")}
+      ${field("If it falls short", "Nobody is paid. Everyone gets everything back.")}
+      <p><a href="#/pot/${STORY.street}">See the finished street fund</a></p>
+    </aside>
+  </div>`;
+  wireCheat(main.querySelector("form.slip"));
+}
+
+function appealPage() {
+  setTitle("Appeals");
+  markNav("appeal");
+  main.innerHTML = `
+  <section class="page-head">
+    <p class="kicker">Example 02</p>
+    <h1>Give to a cause, not to a person</h1>
+    <p class="lead">Someone shares a link: their mother needs surgery. Strangers give. The money can only go to the hospital and the pharmacy, against their own bills. A small amount for food and transport goes to the family, and everyone sees that split before they give. Whatever isn't used goes back to the givers.</p>
+  </section>
+  <div class="pot-grid">
+    ${cheatSlip("appeal", { heading: "h2", tabs: false })}
+    <aside class="slip slip--yellow">
+      <div class="slip__head"><h2>The rules on this box</h2></div>
+      ${field("Who gives", "Anyone with the link")}
+      ${field("Who can be paid", "Only the hospital or the pharmacy, against their own bills")}
+      ${field("Food and transport", "A fixed 80, sent straight to the family, stated up front")}
+      ${field("What's left", "Back to each giver, in proportion")}
+      <p><a href="#/pot/${STORY.appeal}">See a finished appeal and its receipts</a></p>
+    </aside>
+  </div>`;
+  wireCheat(main.querySelector("form.slip"));
 }
 
 function templateList() {
@@ -388,7 +419,7 @@ function templateList() {
 
 function startPage() {
   setTitle("Start a money box");
-  markNav("");
+  markNav("start");
   main.innerHTML = `
   <section class="page-head">
     <h1>Start a money box</h1>
@@ -434,7 +465,7 @@ function startPage() {
       <h3>Any purpose</h3>
       ${templateList()}
       <h3>New to NEAR testnet?</h3>
-      <p>You need a free testnet wallet. <a href="https://wallet.meteorwallet.app" target="_blank" rel="noopener">Meteor Wallet</a> makes one in a minute; switch it to testnet. Creating a box costs 0.1 test NEAR for storage, and the unused part comes back.</p>
+      <p>You need a free testnet wallet and a little test NEAR. <a href="#/try">How to try it</a> walks you through it in five minutes. Creating a box costs 0.1 test NEAR for storage, and the unused part comes back.</p>
     </aside>
   </div>`;
 
@@ -590,27 +621,14 @@ function cheatPage(query) {
   main.innerHTML = `
   <section class="page-head">
     <h1>Try to break the rules</h1>
-    <p class="lead">Three money boxes are open and funded on NEAR testnet. Pick who is sending and where the money should go, and the real contract tells you yes or no.</p>
+    <p class="lead">Three money boxes are open and funded on NEAR testnet. Pick one, choose who is sending and where the money goes, and the real contract tells you yes or no.</p>
   </section>
   <div class="pot-grid">
     ${cheatSlip(story, { heading: "h2" })}
-    <aside class="slip slip--yellow">
-      <div class="slip__head"><h2>Things to try</h2></div>
-      <ul class="prose">
-        <li>Tolu sends the fees to a betting site.</li>
-        <li>Tolu sends the fees to his own wallet.</li>
-        <li>Tolu pays “LLU Bursary”, an account he made to look like the school's.</li>
-        <li>Tolu pays a different school that is on the verified list.</li>
-        <li>Mum takes the fees back before the deadline.</li>
-        <li>The chairman pays himself, on his own.</li>
-        <li>The street's vote passes, and it pays the chairman.</li>
-        <li>Emeka sends the appeal's donations to himself.</li>
-        <li>Emeka pays the hospital's bill to the pharmacy.</li>
-        <li>Tolu pays the school less than its bill, to keep the rest.</li>
-        <li>Ask for more than the box holds.</li>
-        <li>Take the money back before the deadline.</li>
-      </ul>
-      <p class="small">Every one of these was also tried with real transactions in the demo run. <a href="#/proof">See them on the proof page</a>.</p>
+    <aside class="prose">
+      <h3>How it answers</h3>
+      <p>Each answer comes from the money box contract on NEAR testnet, through its own check. Nothing is sent and no wallet is needed.</p>
+      <p>Every one of these attempts was also tried with real transactions in the test run. <a href="#/proof">See them on the proof page</a>.</p>
     </aside>
   </div>`;
   wireCheat(main.querySelector("form.slip"));
@@ -762,7 +780,7 @@ async function renderActions(p) {
   if (!me) {
     blocks.push(`<p>Sign in with a NEAR testnet wallet to ${closable ? "close this box and send the rest back" : "give or pay a bill"}.</p>
       <p><button class="button" type="button" data-act="signin">Sign in</button></p>
-      <p class="small">No testnet wallet? <a href="https://wallet.meteorwallet.app" target="_blank" rel="noopener">Meteor Wallet</a> makes one in a minute; switch it to testnet.</p>`);
+      <p class="small">No testnet wallet or test dollars yet? <a href="#/try">How to try it</a> takes five minutes.</p>`);
   } else {
     let bal = 0n, registered = false;
     try {
@@ -862,6 +880,103 @@ async function renderActions(p) {
   });
 }
 
+const FAUCET = "https://docs.near.org/getting-started/faucet";
+
+function tryPage() {
+  setTitle("How to try it");
+  markNav("try");
+  main.innerHTML = `
+  <section class="page-head">
+    <h1>How to try it</h1>
+    <p class="lead">Everything runs on NEAR testnet, a practice network where the money is free and has no value. Three steps, about five minutes.</p>
+  </section>
+  <ol class="howto">
+    <li class="slip">
+      <span class="howto__n">01</span>
+      <div>
+        <h2>Get a testnet wallet</h2>
+        <p>Any of these work. Make sure the wallet is set to <strong>testnet</strong>, not mainnet.</p>
+        <ul class="howto__links">
+          <li><a href="https://wallet.meteorwallet.app" target="_blank" rel="noopener">Meteor Wallet</a> <span class="small">(in the browser; switch the network to testnet)</span></li>
+          <li><a href="https://testnet.mynearwallet.com" target="_blank" rel="noopener">MyNearWallet, testnet</a> <span class="small">(in the browser)</span></li>
+          <li>HOT, Sender and Nightly <span class="small">(apps and browser extensions)</span></li>
+        </ul>
+      </div>
+    </li>
+    <li class="slip">
+      <span class="howto__n">02</span>
+      <div>
+        <h2>Get some test NEAR</h2>
+        <p>Every action costs a tiny network fee in NEAR, well under a cent. New testnet wallets often come with some. If yours is empty, the free <a href="${FAUCET}" target="_blank" rel="noopener">NEAR testnet faucet</a> sends you some: paste your account name and press Request.</p>
+        <p class="small" data-near></p>
+      </div>
+    </li>
+    <li class="slip">
+      <span class="howto__n">03</span>
+      <div>
+        <h2>Get test dollars</h2>
+        <p>Test dollars (tUSD) are what goes into the money boxes. Press the button to get 500, up to 1,000 in total. The first time also costs 0.00125 test NEAR to open your tUSD balance.</p>
+        <div data-dollars></div>
+        <p class="small" data-msg aria-live="polite"></p>
+      </div>
+    </li>
+  </ol>
+  <section class="section" aria-labelledby="then-h">
+    <h2 id="then-h">Then try these</h2>
+    <ul class="uses">
+      <li><a href="#/pot/${LIVE.family}"><span class="uses__n">A</span><h3>Give to a box</h3><p>Put test dollars into the open school-fees box.</p><span class="uses__go">Open it</span></a></li>
+      <li><a href="#/start"><span class="uses__n">B</span><h3>Start your own</h3><p>Name the school, choose who presses pay, set a deadline.</p><span class="uses__go">Start one</span></a></li>
+      <li><a href="#/cheat"><span class="uses__n">C</span><h3>Break the rules</h3><p>No wallet needed. Ask the contract and see it refuse.</p><span class="uses__go">Try it</span></a></li>
+    </ul>
+  </section>`;
+
+  const box = main.querySelector("[data-dollars]");
+  const msg = main.querySelector("[data-msg]");
+  const nearLine = main.querySelector("[data-near]");
+
+  async function draw() {
+    if (!document.body.contains(box)) return;
+    const me = currentAccount();
+    if (!me) {
+      nearLine.textContent = "";
+      box.innerHTML = `<p><button class="button" type="button" data-signin>Sign in to get test dollars</button></p>`;
+      box.querySelector("[data-signin]").addEventListener("click", () => signIn());
+      return;
+    }
+    box.innerHTML = `<p class="loading">Checking your balance…</p>`;
+    let bal = 0n, registered = false, near = null;
+    try {
+      const [b, st, acc] = await Promise.all([
+        view(TOKEN, "ft_balance_of", { account_id: me }),
+        view(TOKEN, "storage_balance_of", { account_id: me }),
+        rpc("query", { request_type: "view_account", finality: "final", account_id: me }).catch(() => null),
+      ]);
+      bal = BigInt(b.value);
+      registered = Boolean(st.value);
+      if (acc) near = Number(BigInt(acc.amount) / 10n ** 21n) / 1000;
+    } catch {}
+    nearLine.innerHTML = near === null ? "" : `<strong>${esc(me)}</strong> has ${near.toLocaleString("en-US", { maximumFractionDigits: 3 })} test NEAR.${near < 0.05 ? " That's low: use the faucet first." : ""}`;
+    const canGet = bal + 500_000_000n <= 1_000_000_000n;
+    box.innerHTML = `<p>You have <strong>${money(bal)}</strong>.</p>
+      ${canGet ? `<p><button class="button" type="button" data-get>Get 500 test dollars</button></p>` : `<p class="small">That's the most you can hold. Give some to a box first.</p>`}`;
+    const btn = box.querySelector("[data-get]");
+    if (btn) btn.addEventListener("click", async () => {
+      btn.disabled = true;
+      msg.textContent = "Confirm it in your wallet…";
+      try {
+        await getTestDollars(registered);
+        msg.textContent = "Done. Your test dollars have arrived.";
+        draw();
+      } catch (err) {
+        msg.textContent = explain(err);
+        btn.disabled = false;
+      }
+    });
+  }
+  onAccountChange(() => draw());
+  draw();
+}
+
 async function proofPage() {
   setTitle("Proof");
   markNav("proof");
@@ -910,9 +1025,39 @@ async function proofPage() {
   }
 }
 
+// ------------------------------------------------------------------ menu
+
+const menu = document.getElementById("menu");
+const menuBtn = document.querySelector("[data-menu-open]");
+
+function openMenu() {
+  menu.hidden = false;
+  menuBtn.setAttribute("aria-expanded", "true");
+  document.body.classList.add("menu-on");
+  (menu.querySelector('[aria-current="page"]') || menu.querySelector("a")).focus();
+}
+
+function closeMenu() {
+  if (menu.hidden) return;
+  menu.hidden = true;
+  menuBtn.setAttribute("aria-expanded", "false");
+  document.body.classList.remove("menu-on");
+  menuBtn.focus();
+}
+
+menuBtn.addEventListener("click", openMenu);
+menu.querySelector("[data-menu-close]").addEventListener("click", closeMenu);
+menu.addEventListener("click", (e) => { if (e.target.closest("a")) closeMenu(); });
+document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeMenu(); });
+
 // ------------------------------------------------------------------ router
 
 function route() {
+  if (location.hash && !location.hash.startsWith("#/")) {
+    const target = document.getElementById(location.hash.slice(1));
+    if (target) { target.scrollIntoView({ behavior: "smooth" }); return; }
+  }
+  closeMenu();
   const raw = location.hash.replace(/^#\/?/, "");
   const [path, qs] = raw.split("?");
   const query = new URLSearchParams(qs || "");
@@ -923,6 +1068,9 @@ function route() {
   if (parts[0] === "pot" && /^\d+$/.test(parts[1] || "")) return potPage(parts[1]);
   if (parts[0] === "proof") return proofPage();
   if (parts[0] === "start") return startPage();
+  if (parts[0] === "street") return streetPage();
+  if (parts[0] === "try") return tryPage();
+  if (parts[0] === "appeal") return appealPage();
   if (parts[0] === "receipt" && /^\d+$/.test(parts[1] || "") && /^\d+$/.test(parts[2] || "")) return receiptPage(parts[1], parts[2]);
   return home();
 }

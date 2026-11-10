@@ -43,47 +43,47 @@ export const PEOPLE = {
 
 // Short names used when the contract's answer is put into plain words.
 export const SAY = {
-  [s("tolu")]: "Tolu",
-  [s("mum")]: "Mum",
+  [s("tolu")]: "the student",
+  [s("mum")]: "the parent",
   [s("llu")]: "Lagos Lagoon University",
   [s("marinapoly")]: "Marina Polytechnic",
   [s("llu-bursary")]: "“LLU Bursary”",
-  [s("kunle")]: "Kunle (the friend)",
-  [s("sureodds")]: "SureOdds (the betting site)",
-  [s("quicktrade")]: "QuickTrade (the trading app)",
+  [s("kunle")]: "a friend",
+  [s("sureodds")]: "a betting site",
+  [s("quicktrade")]: "a trading app",
   [s("chairman")]: "the chairman",
   [s("street-dev")]: "the neighbours",
   [s("sparks")]: "Sparks Electrical",
-  [s("resident1")]: "Mrs Okafor",
+  [s("resident1")]: "one of the neighbours",
   [s("lagoonheights")]: "Lagoon Heights Hospital",
   [s("cornercare")]: "Corner Care Pharmacy",
-  [s("emeka")]: "Emeka",
-  [s("ngozi-family")]: "Mama Ngozi's family",
+  [s("emeka")]: "the organiser",
+  [s("ngozi-family")]: "the patient's family",
 };
 
 // The choices offered in "Try it yourself".
 export const CHEATS = {
   family: {
     pot: LIVE.family,
-    label: "Tolu's school fees",
+    label: "School fees",
     amount: 280,
     signers: [
-      { id: s("tolu"), label: "Tolu, the student", next: "Tolu would now sign this payment with his own wallet." },
-      { id: s("mum"), label: "Mum", next: "Mum would now sign this payment with her own wallet." },
+      { id: s("tolu"), label: "The student", next: "The student would now sign this payment with their own wallet." },
+      { id: s("mum"), label: "The parent", next: "The parent would now sign this payment with their own wallet." },
     ],
     destinations: [
-      { id: s("tolu"), label: "Tolu's own wallet" },
+      { id: s("tolu"), label: "The student's own wallet" },
       { id: s("kunle"), label: "A friend who wants a loan" },
       { id: s("sureodds"), label: "A betting site" },
       { id: s("quicktrade"), label: "A crypto trading app" },
       { id: s("llu-bursary"), label: "A fake account that looks like the school's" },
       { id: s("marinapoly"), label: "A different school" },
-      { id: s("llu"), label: "His real school, Lagos Lagoon University" },
+      { id: s("llu"), label: "The real school, Lagos Lagoon University" },
     ],
   },
   street: {
     pot: LIVE.street,
-    label: "Adeyemi Street's transformer",
+    label: "The street's transformer",
     amount: 100,
     signers: [
       { id: s("chairman"), label: "The chairman, on his own", next: "The chairman would now sign this payment with his own wallet." },
@@ -91,20 +91,20 @@ export const CHEATS = {
     ],
     destinations: [
       { id: s("chairman"), label: "The chairman's own wallet" },
-      { id: s("resident1"), label: "Mrs Okafor, one of the neighbours" },
+      { id: s("resident1"), label: "One of the neighbours" },
       { id: s("sparks"), label: "The real electrician, Sparks Electrical" },
     ],
   },
   appeal: {
     pot: LIVE.appeal,
-    label: "Mama Ngozi's surgery",
+    label: "A surgery appeal",
     amount: 380,
     signers: [
-      { id: s("emeka"), label: "Emeka, who runs the appeal", next: "Emeka would now sign this payment with his own wallet." },
-      { id: s("ngozi-family"), label: "Mama Ngozi's family", next: "" },
+      { id: s("emeka"), label: "The organiser", next: "The organiser would now sign this payment with their own wallet." },
+      { id: s("ngozi-family"), label: "The patient's family", next: "" },
     ],
     destinations: [
-      { id: s("emeka"), label: "Emeka's own wallet" },
+      { id: s("emeka"), label: "The organiser's own wallet" },
       { id: s("ngozi-family"), label: "The family's own account" },
       { id: s("cornercare"), label: "The pharmacy, for the hospital's bill" },
       { id: s("lagoonheights"), label: "The hospital, for its own bill" },

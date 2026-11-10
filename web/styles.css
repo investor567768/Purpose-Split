@@ -543,3 +543,152 @@ fieldset.field input[name=releaser] { margin-top: 6px; }
 .prose .templates p { max-width: none; }
 .checks .radio { gap: 10px; }
 .checks .small { margin-left: auto; }
+
+/* ---------------------------------------------------------------- v5: menu, uses, questions, buttons */
+
+/* Buttons: square corners, pressed like a rubber stamp. */
+.button { border-radius: 0; box-shadow: 4px 4px 0 var(--counter-deep); transition: transform 80ms ease, box-shadow 80ms ease; }
+.button:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--counter-deep); }
+.button--quiet { box-shadow: inset 0 0 0 2px var(--print), 4px 4px 0 var(--counter-deep); }
+.button--quiet:active { box-shadow: inset 0 0 0 2px var(--print), 1px 1px 0 var(--counter-deep); }
+.who__btn { box-shadow: inset 0 0 0 2px var(--print); }
+.switch { border-radius: 0; }
+
+/* Header */
+.top { flex-wrap: nowrap; }
+.top__right { display: flex; align-items: center; gap: 10px; }
+.who { margin: 0; }
+.menu-btn {
+  display: inline-flex; align-items: center; gap: 10px;
+  font: inherit; font-weight: 700; font-variation-settings: "wdth" 110;
+  color: var(--slip); background: var(--print);
+  border: 0; border-radius: 0; padding: 8px 14px; cursor: pointer;
+}
+.menu-btn:hover { background: #164638; }
+.menu-btn__lines { width: 16px; height: 10px; border-top: 2px solid currentColor; border-bottom: 2px solid currentColor; position: relative; }
+.menu-btn__lines::after { content: ""; position: absolute; left: 0; right: 0; top: 2px; border-top: 2px dotted currentColor; }
+
+/* The menu: a ledger's contents page. */
+body.menu-on { overflow: hidden; }
+.menu { position: fixed; inset: 0; z-index: 50; background: rgba(31, 42, 39, 0.35); overflow-y: auto; }
+.menu__inner {
+  position: relative;
+  min-height: 100%;
+  max-width: 760px;
+  margin-left: auto;
+  background: var(--slip);
+  padding: 22px clamp(18px, 5vw, 48px) 40px;
+  box-shadow: -12px 0 0 -6px rgba(31, 92, 76, 0.12);
+  animation: slide-in 180ms ease-out both;
+}
+.menu__inner::before {
+  content: ""; position: absolute; top: 0; bottom: 0; left: -6px; width: 12px;
+  background: radial-gradient(circle at 6px 7px, rgba(31, 42, 39, 0.35) 4.5px, transparent 5px) repeat-y;
+  background-size: 12px 14px;
+}
+@keyframes slide-in { from { transform: translateX(24px); opacity: 0; } to { transform: none; opacity: 1; } }
+
+.menu__head { display: flex; justify-content: space-between; align-items: center; padding-bottom: 14px; border-bottom: 2px solid var(--print); }
+.menu__title { font-size: var(--fs-small); font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--print-soft); }
+.menu__close {
+  font: inherit; font-weight: 700; color: var(--print); background: transparent;
+  border: 0; box-shadow: inset 0 0 0 2px var(--print); padding: 8px 14px; cursor: pointer;
+}
+.menu__close:hover { background: var(--counter); }
+
+.menu__list { list-style: none; margin: 0; padding: 0; counter-reset: entry; }
+.menu__list li { counter-increment: entry; border-bottom: 1px dashed rgba(31, 92, 76, 0.4); }
+.menu__list a {
+  display: grid;
+  grid-template-columns: 2.6rem auto 1fr auto;
+  align-items: baseline;
+  gap: 12px;
+  padding: 18px 0 16px;
+  text-decoration: none;
+  color: var(--print);
+}
+.menu__list a::before {
+  content: counter(entry, decimal-leading-zero);
+  font-size: var(--fs-small); font-weight: 700; color: var(--print-soft);
+  font-variant-numeric: tabular-nums;
+}
+.menu__word {
+  font-size: clamp(1.7rem, 1rem + 3vw, 2.6rem);
+  line-height: 1.05;
+  font-weight: 780;
+  font-variation-settings: "wdth" 112;
+  letter-spacing: -0.02em;
+}
+.menu__lead { border-bottom: 2px dotted rgba(31, 92, 76, 0.45); transform: translateY(-6px); min-width: 16px; }
+.menu__label { font-size: var(--fs-small); font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--print-soft); text-align: right; }
+.menu__list a:hover .menu__word { color: var(--ink); }
+.menu__list a[aria-current="page"] .menu__word { color: var(--violet); }
+.menu__list a[aria-current="page"]::before { content: "▸"; color: var(--violet); }
+.menu__foot { margin: 28px 0 0; font-size: var(--fs-small); color: var(--print-soft); }
+
+@media (max-width: 620px) {
+  .menu__list a { grid-template-columns: 2.2rem 1fr; row-gap: 4px; }
+  .menu__lead { display: none; }
+  .menu__label { grid-column: 2; text-align: left; letter-spacing: 0.06em; }
+}
+
+/* "Works for any purpose": three numbered index cards. */
+.uses { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+.uses a {
+  display: flex; flex-direction: column; gap: 8px; height: 100%;
+  background: var(--slip); padding: 20px 20px 18px; border-top: 4px solid var(--print);
+  color: var(--body); text-decoration: none;
+  box-shadow: 4px 4px 0 var(--counter-deep);
+  transition: transform 120ms ease;
+}
+.uses a:hover { transform: translate(-2px, -2px); }
+.uses__n { font-size: var(--fs-small); font-weight: 700; color: var(--print-soft); }
+.uses h3 { font-size: 1.25rem; }
+.uses p { margin: 0; }
+.uses__go { margin-top: auto; padding-top: 8px; color: var(--ink); font-weight: 650; text-decoration: underline; text-underline-offset: 3px; }
+.uses__go::after { content: " →"; }
+@media (max-width: 880px) { .uses { grid-template-columns: 1fr; } }
+
+/* Questions: numbered, closed until clicked. */
+.faq summary { display: grid; grid-template-columns: 3rem 1fr 20px; align-items: baseline; padding: 16px 0; }
+.faq summary::after {
+  content: ""; position: static; width: 9px; height: 9px;
+  border-right: 2px solid var(--print); border-bottom: 2px solid var(--print);
+  transform: rotate(-45deg); transition: transform 150ms ease; align-self: center;
+}
+.faq details[open] summary::after { content: ""; transform: rotate(45deg); }
+.faq__n { font-size: var(--fs-small); font-weight: 700; color: var(--print-soft); font-variant-numeric: tabular-nums; }
+.faq details > p { margin: 0 0 18px 3rem; padding-left: 14px; border-left: 3px solid var(--violet); }
+@media (max-width: 520px) {
+  .faq summary { grid-template-columns: 2.4rem 1fr 18px; }
+  .faq details > p { margin-left: 0; }
+}
+
+/* Ideas to try: a closed note at the foot of the slip. */
+.ideas { margin-top: 20px; padding-top: 12px; border-top: 1px dashed rgba(31, 92, 76, 0.45); }
+.ideas summary { cursor: pointer; font-weight: 650; color: var(--ink); width: fit-content; }
+.ideas summary span { color: var(--print-soft); font-weight: 500; }
+.ideas ol { margin: 10px 0 0; padding-left: 22px; display: grid; gap: 6px; }
+
+.kicker { margin: 0 0 10px; font-size: var(--fs-small); font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--print-soft); }
+
+.wordmark, .who__btn, .menu-btn { white-space: nowrap; }
+@media (max-width: 420px) {
+  .top { padding-top: 16px; padding-bottom: 16px; gap: 8px; }
+  .wordmark { font-size: 1.05rem; gap: 8px; }
+  .wordmark__mark { width: 18px; height: 18px; }
+  .top__right { gap: 6px; }
+  .who__btn { padding: 6px 10px; }
+  .menu-btn { padding: 8px 10px; gap: 8px; }
+  .cta .button { margin-top: 10px; }
+}
+
+/* How to try it */
+.howto { list-style: none; margin: 0; padding: 24px 0 0; display: grid; gap: 28px; max-width: 820px; }
+.howto > li { display: grid; grid-template-columns: 4rem 1fr; gap: 12px; }
+.howto__n { font-weight: 800; font-variation-settings: var(--wide); font-size: 2rem; line-height: 1; color: var(--print); }
+.howto h2 { font-size: var(--fs-h3); margin-bottom: 8px; }
+.howto p { margin: 0 0 10px; max-width: 60ch; }
+.howto__links { margin: 0; padding-left: 18px; display: grid; gap: 6px; }
+.howto .loading { padding: 6px 0; }
+@media (max-width: 520px) { .howto > li { grid-template-columns: 1fr; } }

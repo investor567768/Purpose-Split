@@ -107,3 +107,13 @@ safe-buffer/index.js:
 @noble/curves/esm/abstract/edwards.js:
 @noble/curves/esm/ed25519.js:
   /*! noble-curves - MIT License (c) 2022 Paul Miller (paulmillr.com) */
+
+js-sha256/src/sha256.js:
+  /**
+   * [js-sha256]{@link https://github.com/emn178/js-sha256}
+   *
+   * @version 0.11.1
+   * @author Chen, Yi-Cyuan [emn178@gmail.com]
+   * @copyright Chen, Yi-Cyuan 2014-2025
+   * @license MIT
+   */
