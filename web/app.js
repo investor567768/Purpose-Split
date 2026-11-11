@@ -50,6 +50,29 @@ const esc = (s) =>
   String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
 const nameOf = (id) => PEOPLE[id] || id;
+/** The made-up payees carry "(demo)" in their on-chain names; the footer already says they are made up. */
+const undemo = (t) => String(t || "").replace(/\s*\(demo\)/gi, "");
+/** Our demo boxes were titled with made-up people's names; show them by what they are for. */
+const DEMO_TITLES = {
+  "Tolu's 2026/27 fees": "School fees, 2026/27",
+  "Tolu's whole school year": "A whole school year",
+  "Adeyemi Street transformer repair": "Street transformer repair",
+  "Mama Ngozi's surgery": "A surgery appeal",
+};
+/** The test run's step titles name made-up people; show their roles instead. */
+const ROLE_WORDS = [
+  [/\bUncle Femi's\b/g, "the relative abroad's"], [/\bUncle Femi\b/g, "a relative abroad"],
+  [/\bTolu's\b/g, "the student's"], [/\bTolu\b/g, "the student"],
+  [/\bMum's\b/g, "the parent's"], [/\bMum\b/g, "the parent"],
+  [/\bEmeka's\b/g, "the organiser's"], [/\bEmeka\b/g, "the organiser"],
+  [/\bresident(\d)\b/g, "neighbour $1"],
+];
+const roles = (t) => {
+  let out = undemo(t);
+  for (const [re, to] of ROLE_WORDS) out = out.replace(re, to);
+  return out.replace(/(^|[.:!?]\s+)([a-z])/g, (_, a, b) => a + b.toUpperCase());
+};
+const titleOf = (p) => (p.creator && p.creator.endsWith(`.${ROOT}`) && DEMO_TITLES[p.title]) || p.title;
 
 /** The contract's answer with account names swapped for people's names. */
 function plain(words) {
@@ -59,7 +82,7 @@ function plain(words) {
   return out.charAt(0).toUpperCase() + out.slice(1);
 }
 
-const acct = (id) => `<a href="${EXPLORER}/address/${esc(id)}" target="_blank" rel="noopener">${esc(id)}</a>`;
+const acct = (id) => `<a class="acct" href="${EXPLORER}/address/${esc(id)}" target="_blank" rel="noopener">${esc(id)}</a>`;
 
 /** Base units (6 decimals) to an exact, plain amount: 13333333 → "13.333333". */
 function money(base) {
@@ -90,7 +113,7 @@ function markNav(name) {
 
 /** A payee's display name. */
 const cap = (t) => t.charAt(0).toUpperCase() + t.slice(1);
-const payeeName = (x) => (x && (x.name || nameOf(x.account_id))) || "the payee";
+const payeeName = (x) => (x && undemo(x.name || nameOf(x.account_id))) || "the payee";
 
 /** "A", "A or B", "A, B or C". */
 function either(names) {
@@ -415,7 +438,7 @@ function home() {
 
 /** One pass, drawn as a stamped ticket. */
 function passCard(x, block) {
-  const [what, ...rest] = x.title.split(": ");
+  const [what, ...rest] = undemo(x.title).split(": ");
   const to = rest.join(": ") || x.payee;
   return `
   <article class="pass">
@@ -530,7 +553,7 @@ function startPage() {
     <form class="slip" data-start novalidate>
       <div class="slip__head"><h2>Your money box</h2><span class="slip__no">NEAR testnet</span></div>
       <label class="field"><span class="field__label">What is the money for?</span>
-        <input name="title" maxlength="80" required placeholder="Tolu's 2026/27 school fees"></label>
+        <input name="title" maxlength="80" required placeholder="School fees, 2026/27"></label>
       <fieldset class="field"><legend class="field__label">Who can be paid? Pick up to three from the verified list</legend>
         <div class="checks" data-payees><span class="small">Reading the verified list…</span></div></fieldset>
       <label class="field"><span class="field__label">A reference sent with every payment (optional)</span>
@@ -577,7 +600,7 @@ function startPage() {
   view(POTS, "get_payees", { from_index: 0, limit: 100 })
     .then(({ value }) => {
       form.querySelector("[data-payees]").innerHTML = value
-        .map((x) => `<label class="radio"><input type="checkbox" name="payee" value="${esc(x.account_id)}"> ${esc(x.name)} <span class="small">${esc(x.account_id)}</span></label>`)
+        .map((x) => `<label class="radio"><input type="checkbox" name="payee" value="${esc(x.account_id)}"> ${esc(undemo(x.name))} <span class="small">${esc(x.account_id)}</span></label>`)
         .join("");
       update();
     })
@@ -690,14 +713,14 @@ async function receiptPage(potId, index) {
   }
   const req = p.requests[pay.request_id];
   const payee = payeeOf(p, pay.to);
-  const text = `${p.title}: ${money(pay.amount)} paid to ${payee}${pay.confirmed ? `, and ${payee} confirmed they received it` : ""}. The money could not go anywhere else. Check it yourself: ${location.href}`;
+  const text = `${titleOf(p)}: ${money(pay.amount)} paid to ${payee}${pay.confirmed ? `, and ${payee} confirmed they received it` : ""}. The money could not go anywhere else. Check it yourself: ${location.href}`;
   main.innerHTML = `
   <section class="page-head">
     <h1>Receipt</h1>
     <p class="lead">Read live from the contract on NEAR testnet. Nobody can edit it, including the person sharing it.</p>
   </section>
   <article class="slip receipt">
-    <div class="slip__head"><h2>${esc(p.title)}</h2><span class="slip__no">Box ${p.id}, payment ${Number(index) + 1}</span></div>
+    <div class="slip__head"><h2>${esc(titleOf(p))}</h2><span class="slip__no">Box ${p.id}, payment ${Number(index) + 1}</span></div>
     ${field("Paid to", `${esc(payee)} <small>${acct(pay.to)} <span class="check">on the verified list</span></small>`)}
     ${field("Amount", money(pay.amount))}
     ${field("For", esc(req ? req.note : ""))}
@@ -718,7 +741,7 @@ async function receiptPage(potId, index) {
 
 // Our three examples, shown first on the Money boxes page.
 const EXAMPLES = [
-  { id: SPLIT, story: null, kicker: "School year", title: "Tolu's whole school year", blurb: "One box pays the school, a bookshop and a hostel, each only against its own bill, plus pocket money." },
+  { id: SPLIT, story: null, kicker: "School year", title: "A whole school year", blurb: "One box pays the school, a bookshop and a hostel, each only against its own bill, plus pocket money." },
   { id: LIVE.street, story: "street", kicker: "Street fund", title: "The street's transformer", blurb: "Neighbours chip in. Only their vote can pay the electrician, and never the chairman." },
   { id: LIVE.appeal, story: "appeal", kicker: "Give to a cause, not to a person", title: "A surgery appeal", blurb: "Anyone can give. Only the hospital and the pharmacy can be paid." },
 ];
@@ -729,7 +752,7 @@ function potCard(p, ex) {
   return `
   <a class="slip pot-card ${p.kind === "Group" ? "slip--yellow" : ""}" href="#/pot/${p.id}" style="text-decoration:none;color:inherit">
     ${ex ? `<p class="kicker">${esc(ex.kicker)}</p>` : ""}
-    <div class="slip__head"><h3>${esc(p.title)}</h3><span class="slip__no">No. ${p.id}</span></div>
+    <div class="slip__head"><h3>${esc(titleOf(p))}</h3><span class="slip__no">No. ${p.id}</span></div>
     ${ex ? `<p>${esc(ex.blurb)}</p>` : ""}
     ${field("Pays only", esc(either(p.payees.map(payeeName))))}
     ${field("Raised", `${money(p.raised)} of ${money(p.target)}`)}
@@ -827,7 +850,7 @@ async function potPage(id) {
   const group = p.kind === "Group";
   const only = either(p.payees.map(payeeName));
   const hasFree = BigInt(p.free_target) > 0n;
-  const shareText = `${p.id === LIVE.appeal ? "Give to a cause, not to a person. " : ""}${p.title}. The money can only go to ${only}${hasFree ? `, plus ${money(p.free_target)} for ${p.free_label.toLowerCase()} sent to ${nameOf(p.free_to)}` : ""}. Whatever isn't used goes back to the givers. See it live: ${location.href}`;
+  const shareText = `${p.id === LIVE.appeal ? "Give to a cause, not to a person. " : ""}${titleOf(p)}. The money can only go to ${only}${hasFree ? `, plus ${money(p.free_target)} for ${p.free_label.toLowerCase()} sent to ${nameOf(p.free_to)}` : ""}. Whatever isn't used goes back to the givers. See it live: ${location.href}`;
   const target = BigInt(p.target) || 1n;
   const pct = (v) => `${Number((BigInt(v) * 10000n) / target) / 100}%`;
   const showBack = p.status === "Open" && BigInt(p.held) > 0n;
@@ -841,7 +864,7 @@ async function potPage(id) {
   main.innerHTML = `
   <section class="page-head">
     ${ex ? `<p class="kicker">${esc(ex.kicker)}</p>` : ""}
-    <h1>${esc(p.title)}</h1>
+    <h1>${esc(titleOf(p))}</h1>
     <p class="lead">This money can only go to ${esc(only)}, against their own bills. ${group ? "A vote decides each payment." : `${esc(cap(SAY[p.releaser] || nameOf(p.releaser)))} presses pay.`} Whatever isn't used goes back to the givers.</p>
     ${nextSteps(p)}
     <div class="split">
@@ -1170,11 +1193,11 @@ async function proofPage() {
     main.querySelector("[data-steps]").innerHTML = run.steps
       .map((s) => {
         const said = s.refused
-          ? `<span class="said">${esc(s.verdict)}</span>`
+          ? `<span class="said">${esc(roles(s.verdict))}</span>`
           : !s.tx && /^Checked: /.test(s.verdict)
-            ? `<span class="noted">${esc(s.verdict.replace(/^Checked: /, "Read from the contract: "))}</span>`
+            ? `<span class="noted">${esc(roles(s.verdict.replace(/^Checked: /, "Read from the contract: ")))}</span>`
             : "";
-        return `<li><span class="n">${s.step}</span><span class="what">${esc(s.title)}${said}</span>${
+        return `<li><span class="n">${s.step}</span><span class="what">${esc(roles(s.title))}${said}</span>${
           s.tx ? `<a href="${EXPLORER}/txns/${esc(s.tx)}" target="_blank" rel="noopener">Open in explorer</a>` : ""
         }</li>`;
       })

@@ -810,3 +810,7 @@ body.menu-on { overflow: hidden; }
 .nextup p { margin: 12px 0 0; font-weight: 600; color: var(--body); }
 @media (max-width: 700px) { .nextup ol { grid-template-columns: 1fr 1fr; } }
 .proof-steps .noted { display: block; font-weight: 400; color: var(--print-soft); margin-top: 4px; }
+
+/* v8.1: account names are for checking, so they sit quietly under the role. */
+a.acct { color: var(--print-soft); font-size: 0.8rem; font-weight: 400; text-decoration-color: rgba(31, 92, 76, 0.3); word-break: break-all; }
+a.acct:hover { color: var(--ink); }
