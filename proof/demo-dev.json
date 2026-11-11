@@ -1,7 +1,7 @@
 {
-  "contract": "pots-dev5.purposesplit.testnet",
+  "contract": "pots-dev6.purposesplit.testnet",
   "token": "tusd.purposesplit.testnet",
-  "ran_at": "2026-11-10T10:35:24.715Z",
+  "ran_at": "2026-11-11T14:11:48.315Z",
   "books_match": true,
   "steps": [
     {
@@ -10,7 +10,7 @@
       "ok": true,
       "refused": false,
       "verdict": "Done",
-      "tx": "8sGnagUgwC3x6hTZSE51vhQLQPb3M4gBWngv1SSW2JFX"
+      "tx": "13TXobKnBvTGCWmsyUnBhY1xRzkXMLpthQnfXoJxmLh1"
     },
     {
       "step": 2,
@@ -18,7 +18,7 @@
       "ok": true,
       "refused": false,
       "verdict": "Done",
-      "tx": "4HBYeerX9U3E3Br54vfh2MBEuvFY12ZFLeCZKyGbu1mC"
+      "tx": "EVtQVeepf7L4YgDeEKitmmrH7gd1ADtKQeZqZVVNezV6"
     },
     {
       "step": 3,
@@ -26,7 +26,7 @@
       "ok": true,
       "refused": false,
       "verdict": "Done",
-      "tx": "7wXjwz47K4Ch1vxnt12DJTgx3tGqs5vK6Ms1JoNKKmNY"
+      "tx": "8pPn3dsvewGaNHLChxCh4BkFz6mnY3a3nNaMP6ybU9NA"
     },
     {
       "step": 4,
@@ -34,7 +34,7 @@
       "ok": true,
       "refused": false,
       "verdict": "Done",
-      "tx": "9ufLuiWZgsWTVHJu819gVqr9uGczUL1GuMtmkFURWuFr"
+      "tx": "8bRzjgQ9BzZPaj9rt5oWJm1b4RER2dgZxVARGyGwbkD3"
     },
     {
       "step": 5,
@@ -42,7 +42,7 @@
       "ok": true,
       "refused": false,
       "verdict": "Done",
-      "tx": "6nvRJ6Rd9hGCBBJY7ZZvr9Uzrh2KpxzNh329TWzgDFfd"
+      "tx": "9ZvYxCYSBxpSAXezjL2gxZLZgUbjotsF4o9DTPDJgbSR"
     },
     {
       "step": 6,
@@ -50,7 +50,7 @@
       "ok": true,
       "refused": false,
       "verdict": "Done",
-      "tx": "CM1gx8L4Q6TZryJ5zWvAf4GtMYDpfRPCCJAjz7FkpaKY"
+      "tx": "5USsJVS6K2rvVpLCvWYP6eADZaUYGs9cZku51LPvpnUY"
     },
     {
       "step": 7,
@@ -58,7 +58,7 @@
       "ok": true,
       "refused": false,
       "verdict": "Done",
-      "tx": "AZxFuwr1YKz1wDKee8fK35NG6VbT7g7TzU5mkgVTPDDJ"
+      "tx": "FWqQNtKExLbyZ2AAQCS7u2BrCcwUZsiz2Gqsr2XdByRR"
     },
     {
       "step": 8,
@@ -66,7 +66,7 @@
       "ok": true,
       "refused": false,
       "verdict": "Done",
-      "tx": "GEhuQziT1pqwoFv6Zz4eNT5DPWtWQBvTHaVWiPM7s7bs"
+      "tx": "78YFBMuZuRct2F4ZfepfbGLCkh9aaxJufwHg7E3HVAia"
     },
     {
       "step": 9,
@@ -74,7 +74,7 @@
       "ok": true,
       "refused": false,
       "verdict": "Done",
-      "tx": "E6VenL8nbrjbnQycrVPMAucttcj2thv4oYfnAYJUa4RZ"
+      "tx": "CcBDTXkeuQteRuoQMU4Aar6j2zeSrsaTC1jwA2w9RFBf"
     },
     {
       "step": 10,
@@ -82,7 +82,7 @@
       "ok": true,
       "refused": false,
       "verdict": "Done",
-      "tx": "HNrWLbJxM4xMgT7dW5EgwQRD6L4oYWQCMeEyAsHLAn7Y"
+      "tx": "9F62besSv95BqEv8wDdHSwK7zJSPmsw7czbpDEdQvqxp"
     },
     {
       "step": 11,
@@ -90,7 +90,7 @@
       "ok": false,
       "refused": true,
       "verdict": "Refused: \"Only llu.purposesplit.testnet can ask this pot for payment\"",
-      "tx": "FUB1dDpYxTY3fTnndNGxhy4Um7EoMjqYyyxTJCTV4Qdz"
+      "tx": "2V4V28kb9QvVvLQ9do33ESN2kV5NAoCj3ywUyBAeihuP"
     },
     {
       "step": 12,
@@ -98,7 +98,7 @@
       "ok": false,
       "refused": true,
       "verdict": "Refused: \"This money cannot go to tolu.purposesplit.testnet. This pot pays only llu.purposesplit.testnet.\"",
-      "tx": "36V2GHFwbaax1jUHw63dKkQk5RiQ7K3gCFVyCNyQQJcq"
+      "tx": "2fr5LMM6iCki5q1oQjTEGtu8dviguNYH7tLG4jYDoDuz"
     },
     {
       "step": 13,
@@ -106,7 +106,7 @@
       "ok": false,
       "refused": true,
       "verdict": "Refused: \"llu-bursary.purposesplit.testnet is not on the verified list. This pot pays only llu.purposesplit.testnet.\"",
-      "tx": "DzWDUgiwESTegxVgxjfjDYem5PP7Q4VL3pw4ArzE7Mbp"
+      "tx": "7Kxwj3nYGpvqgP9DK86NaJYLdJqvVYHxtoAjpKsdBNRZ"
     },
     {
       "step": 14,
@@ -114,7 +114,7 @@
       "ok": false,
       "refused": true,
       "verdict": "Refused: \"This pot pays only llu.purposesplit.testnet.\"",
-      "tx": "6cxmSBvTWdq4A52myXhU1NzG65SgYkQmSZdwniLpiHrp"
+      "tx": "HJ9UXsqoV6vFdnHiGgQ9Dfus8UcdZcxR1tYRt5Hf7bAi"
     },
     {
       "step": 15,
@@ -122,7 +122,7 @@
       "ok": false,
       "refused": true,
       "verdict": "Refused: \"Only tolu.purposesplit.testnet can pay from this pot.\"",
-      "tx": "8SB9TqodzzsUsofqjnxKK8DSZ58giAxbEk398iDTF4aB"
+      "tx": "7U7VkgaYDT7qC1NyRGiogCkSUWsWBsDcGGkgV6DsKLZ1"
     },
     {
       "step": 16,
@@ -130,7 +130,7 @@
       "ok": false,
       "refused": true,
       "verdict": "Refused: \"llu.purposesplit.testnet has not asked for 150 tUSD. Money leaves this pot only against a payment request from the payee.\"",
-      "tx": "4uKkUyBJLuc1KiKESSGUXV5bapLjTY8hkHGxnh1E6iXy"
+      "tx": "2BXQBfy9uF5kbA56nwB9xJkX5UQ2wNuM9y2SbEaKUBC8"
     },
     {
       "step": 17,
@@ -138,295 +138,359 @@
       "ok": true,
       "refused": false,
       "verdict": "Done",
-      "tx": "8nRmUuTU9XFKnRWMqrj45rj5FYfbTNUK4USiam5L3HvP"
+      "tx": "C7xqq9MmkBfnPvNeMg8AAHmtWmZTEjCxwizaA9K8mq34"
     },
     {
       "step": 18,
+      "title": "Cheat: Tolu confirms the payment himself, to get a \"Fees paid\" pass without the school",
+      "ok": false,
+      "refused": true,
+      "verdict": "Refused: \"Only the payee that was paid can confirm a payment\"",
+      "tx": "8FT8U9qakv9aGgQ3H2eYVdRn58Ur1osqwqUvwvZFjR8V"
+    },
+    {
+      "step": 19,
       "title": "The school confirms the payment on-chain",
       "ok": true,
       "refused": false,
       "verdict": "Done",
-      "tx": "3CpwVYStscz7KGxqFXicyGbnw3CvwRbkDgds4Y1kCqZr"
+      "tx": "C2FpJib2FSVXzkWyyH9QpeXyJJ9d7x7GsMDQhY7AKu5u"
     },
     {
-      "step": 19,
+      "step": 20,
+      "title": "Tolu now holds a pass that anyone can check",
+      "ok": true,
+      "refused": false,
+      "verdict": "Checked: \"Fees paid: Lagos Lagoon University (demo)\", pass 0-0, held by tolu.purposesplit.testnet",
+      "tx": null
+    },
+    {
+      "step": 21,
+      "title": "Cheat: Tolu tries to give his pass to a friend",
+      "ok": false,
+      "refused": true,
+      "verdict": "Refused: \"A pass cannot be moved or sold. It stays with the account that paid, as proof.\"",
+      "tx": "94nny1BGt11K8do1yN5xTHs5cPhvn6rLVuoaW3z2HkYR"
+    },
+    {
+      "step": 22,
       "title": "Cheat: Tolu tries to pay out more than is left",
       "ok": false,
       "refused": true,
       "verdict": "Refused: \"Only 20 tUSD is left in this pot.\"",
-      "tx": "6UT7mW7P9qBLChQCGhm9CHj2cTgKUt7aiYZuKXwWxHgG"
+      "tx": "ASj97cVasbq58spJ28APwcqFFNMwdq2rYKYkphaLU6Kg"
     },
     {
-      "step": 20,
+      "step": 23,
       "title": "The chairman creates a pot: 200 for the transformer repair, payable only to Sparks Electrical, released only by the residents' vote",
       "ok": true,
       "refused": false,
       "verdict": "Done",
-      "tx": "2P1H96BbDYUJFEQiU6U3qQ8WANnTB5ajQStoNrLoVyfw"
+      "tx": "4HnGTPdUv9raynSo29SbsNWhrCsMQ3ypx5xmgQYwnPcL"
     },
     {
-      "step": 21,
+      "step": 24,
       "title": "resident1 adds 40",
       "ok": true,
       "refused": false,
       "verdict": "Done",
-      "tx": "zfVuVTDuFLEXVRY38Z4kduMxQW2Ae17bWAjGio1yLZ9"
+      "tx": "EBT7Ywuz3LwnZ1XDW4RTeQB1PcThLNJer1V3YBpUzgVF"
     },
     {
-      "step": 22,
+      "step": 25,
       "title": "resident2 adds 40",
       "ok": true,
       "refused": false,
       "verdict": "Done",
-      "tx": "HUMbnbFgEXEbkZxscjt15oK22n7ydaz2QouZPxEXnBha"
+      "tx": "2BKTX4eifJtZtedSvS15oaU9zbTjSL1F5F1YHT9PUNLk"
     },
     {
-      "step": 23,
+      "step": 26,
       "title": "resident3 adds 40",
       "ok": true,
       "refused": false,
       "verdict": "Done",
-      "tx": "35VA2WXsKA5GbStFrVbc2MdWHJ6mYQn2ZZH8AHWtVBVc"
+      "tx": "74rEL9a8wiDgWJWdkvXxk4VmgeK5HRGi3ne7WgFa9pD8"
     },
     {
-      "step": 24,
+      "step": 27,
       "title": "Sparks Electrical asks for 100 to buy parts",
       "ok": true,
       "refused": false,
       "verdict": "Done",
-      "tx": "AmXU41rtVtVJaRT8tt2XZtW2cbgVqxdrEjuiqzQK4zyr"
+      "tx": "jgACd1dXeQ1MaMnt4gxcHN2mZhUezkZ2XyrAF8aHf5p"
     },
     {
-      "step": 25,
+      "step": 28,
       "title": "Cheat: the vote tries to pay before the target is reached",
       "ok": false,
       "refused": true,
       "verdict": "Refused: \"Nothing can be paid until the target is reached: 120 of 200 tUSD raised so far.\"",
-      "tx": "CxUtoHf4JdHXerQ1mToxGBDJLivBqE1tEP9qRb45T2VD"
+      "tx": "7ra477Dh4NgxR4BKGwEr1YQjbsP9ovYFdoHLVQXwdAtD"
     },
     {
-      "step": 26,
+      "step": 29,
       "title": "resident4 adds 40",
       "ok": true,
       "refused": false,
       "verdict": "Done",
-      "tx": "9kFXzhyApVgisfWiyUfqJgX6iwyuahammG3Zd24DVMST"
+      "tx": "Ejz2AyNEvtsC1QpitPUzskBognnP7SKLxpPoigWu25CE"
     },
     {
-      "step": 27,
+      "step": 30,
       "title": "resident5 adds 40",
       "ok": true,
       "refused": false,
       "verdict": "Done",
-      "tx": "4eiJKH13qaCm1t6BHa2ZNQerYQdyy1wmzCLpEJtWU32E"
+      "tx": "ELnsD5m8BX7M4mGSsTKQiaT4hUQXKhTFZEuGg9weHJju"
     },
     {
-      "step": 28,
+      "step": 31,
       "title": "Cheat: the chairman pays himself directly",
       "ok": false,
       "refused": true,
       "verdict": "Refused: \"Only a vote of street-dev.purposesplit.testnet can release this pot.\"",
-      "tx": "4qMN8Qsr5gaH5kf1sp3YES518PqBQBfUxLpDeyWPkmDx"
+      "tx": "37Wg8QykN1Z3DpB6GeX67uZvVkdZzvVzGjHmQaW2h4p2"
     },
     {
-      "step": 29,
+      "step": 32,
       "title": "Cheat: a passed vote tries to pay the chairman",
       "ok": false,
       "refused": true,
       "verdict": "Refused: \"This money cannot go to chairman.purposesplit.testnet. This pot pays only sparks.purposesplit.testnet.\"",
-      "tx": "4DbZaqfRKcRoXDxRZpr1qU5wuUyHF6wv4ngdXm5cBZx1"
+      "tx": "3YfMTJG5mnoeGZW9WsJGgQ8T9gQZ3rTpRKhtJjd7Wwkx"
     },
     {
-      "step": 30,
+      "step": 33,
       "title": "Cheat: the vote tries to pay an amount the electrician never asked for",
       "ok": false,
       "refused": true,
       "verdict": "Refused: \"sparks.purposesplit.testnet has not asked for 150 tUSD. Money leaves this pot only against a payment request from the payee.\"",
-      "tx": "98MwSqDKtyk5ALfVSuqqz9oCrDNyxJnL5gRHfZNCyuF1"
+      "tx": "8jHbnJr8YMJ5jLEPVBgmsfTScQed6yhYXn9S9inNoFxh"
     },
     {
-      "step": 31,
+      "step": 34,
       "title": "The residents' vote pays the request for parts: 100",
       "ok": true,
       "refused": false,
       "verdict": "Done",
-      "tx": "E81BxUPs6k6LBvUzkwQeNGVVp5crzyrv2pGEk6isRo6Q"
+      "tx": "GVYhk144gxnJP4832SibHg7wbWvUJKbWhyPrmAFXCdPv"
     },
     {
-      "step": 32,
+      "step": 35,
+      "title": "Sparks Electrical confirms the 100 arrived",
+      "ok": true,
+      "refused": false,
+      "verdict": "Done",
+      "tx": "Dmo4jdzJGGzn1cWRtESJKdkyvfj2RbAfpA5raKJJ2fE4"
+    },
+    {
+      "step": 36,
       "title": "The light is back: Sparks Electrical asks for the remaining 80",
       "ok": true,
       "refused": false,
       "verdict": "Done",
-      "tx": "B9jAaQW9Msqjk1k121HSqthcycUpBkGZ5fW4JGk2Nk4K"
+      "tx": "CbZQdMCLH5xdXafNoZs2nbW1Dd262R5eG39ducZywoTq"
     },
     {
-      "step": 33,
+      "step": 37,
       "title": "The residents' vote pays it",
       "ok": true,
       "refused": false,
       "verdict": "Done",
-      "tx": "7MBFCVCod8vZ3xwBqgSicFf1YzQYuptDuh6DXTJY7WXT"
+      "tx": "A696WzqxSwPY4SrAG5EnmWS65VJT1n4jwawPehx4TZfX"
     },
     {
-      "step": 34,
+      "step": 38,
+      "title": "Sparks Electrical confirms the 80 arrived",
+      "ok": true,
+      "refused": false,
+      "verdict": "Done",
+      "tx": "8u7AfKd83oXiipxPn67M5BNL8fqYGu8LTYvAHgWB35e9"
+    },
+    {
+      "step": 39,
+      "title": "The street holds proof of both stages it paid for",
+      "ok": true,
+      "refused": false,
+      "verdict": "Checked: \"Paid: Sparks Electrical (demo)\" (1-0), \"Paid: Sparks Electrical (demo)\" (1-1)",
+      "tx": null
+    },
+    {
+      "step": 40,
       "title": "Cheat: a resident asks for a refund before the deadline",
       "ok": false,
       "refused": true,
       "verdict": "Refused: \"Money goes back only after the deadline, or at once if the payees leave the verified list. Until then it is kept for its purpose.\"",
-      "tx": "6aWam8kEY9a5jhbLDkMs5A5Hu3JtCii2v7iCiecTCoBb"
+      "tx": "4j5uX2yavyXgfdE1GGtnHKS2k2AcJcoD8uBPCTAF2Unt"
     },
     {
-      "step": 35,
+      "step": 41,
       "title": "Emeka opens an appeal for his mother's surgery: 500, payable only to the hospital or the pharmacy, plus 80 for food and transport sent straight to the family",
       "ok": true,
       "refused": false,
       "verdict": "Done",
-      "tx": "AgFJjTdn3LuCTeccaiHDXCB8GPs9XPPaVEqXgH8BAbXG"
+      "tx": "DJyoKTbDqpoqDsWquFvkX3YPyionhoA8nJ5oirSMCXgy"
     },
     {
-      "step": 36,
+      "step": 42,
       "title": "resident1 gives 100 from a link shared on X",
       "ok": true,
       "refused": false,
       "verdict": "Done",
-      "tx": "3jqicAYVobSnT3WMKQ1gbSbWYrXyCEx4j4gistjoZRzP"
+      "tx": "1nyG2CCk5X5bfhge9YmKti66Qy4hvmXBBxMF6aSViWx"
     },
     {
-      "step": 37,
+      "step": 43,
       "title": "resident2 gives 100 from a link shared on X",
       "ok": true,
       "refused": false,
       "verdict": "Done",
-      "tx": "Fp6XH8dwrXu8GiBAXHuqKpdjSviiucKKEeAQJcvKfzF"
+      "tx": "6NMzR4pkjkoUmSBSLrnfw8cK6cGFTuaXDAKUYb6h2Hek"
     },
     {
-      "step": 38,
+      "step": 44,
       "title": "resident3 gives 100 from a link shared on X",
       "ok": true,
       "refused": false,
       "verdict": "Done",
-      "tx": "Droiirxctur57QPfL9XHAoWQnZZEiSJUnZxHScyRmRQz"
+      "tx": "Bn1rJZknuZGAPFZmZFLHC4f9aES8LEC5E2uov54idXX7"
     },
     {
-      "step": 39,
+      "step": 45,
       "title": "The hospital sends its bill: 380 for the operation",
       "ok": true,
       "refused": false,
       "verdict": "Done",
-      "tx": "8xZGRnbTU2ce3xWcYLtdL85DAJuX1Ly9HWbT7yu2YSKT"
+      "tx": "Fhu9U1ZdZN3KAQdNPBb7figtUJAif5JoWcxuQS21kDSa"
     },
     {
-      "step": 40,
+      "step": 46,
       "title": "Cheat: Emeka pays the hospital before the 500 target is reached",
       "ok": false,
       "refused": true,
       "verdict": "Refused: \"Nothing can be paid until the target is reached: 300 of 500 tUSD raised so far.\"",
-      "tx": "4e6S6htCRq2gLdQpEPAyF4CDEAv33dEYaJbMSepd4DD9"
+      "tx": "A6TpPUkpiCrsqKwPZfDdFgP8UuVFAbpf2RYMMz6RMqRZ"
     },
     {
-      "step": 41,
+      "step": 47,
       "title": "resident4 gives 100",
       "ok": true,
       "refused": false,
       "verdict": "Done",
-      "tx": "APoGknziXdgr3KHGoyFf7vVqUozPEaMCeNazAqeQHk19"
+      "tx": "A2Kx8tv2nka1Cp9KG3H6J6P5uhhdMLbjvW3kTFE57hMa"
     },
     {
-      "step": 42,
+      "step": 48,
       "title": "resident5 gives 100",
       "ok": true,
       "refused": false,
       "verdict": "Done",
-      "tx": "4KyKf2pCmYqcRBLpEqUNzqo29PEv2PrT4moRaK8iVizA"
+      "tx": "BABBhZpEYEku7WFiDJDm4bs6zYxpHLDnr3SJcMBW6UQS"
     },
     {
-      "step": 43,
+      "step": 49,
       "title": "resident1 also gives 80 for food and transport, which goes straight to the family",
       "ok": true,
       "refused": false,
       "verdict": "Done",
-      "tx": "5u3M8hcH6pbz2dCjGDejxDnpf1mRfFxhkdGAaXVURaWK"
+      "tx": "Bk5qm8TU2j1NoNrKBG7vBAf9dvyNttPRAdTpGk2jKCLv"
     },
     {
-      "step": 44,
+      "step": 50,
       "title": "Cheat: Emeka sends the donations to his own account",
       "ok": false,
       "refused": true,
       "verdict": "Refused: \"This money cannot go to emeka.purposesplit.testnet. This pot pays only lagoonheights.purposesplit.testnet or cornercare.purposesplit.testnet.\"",
-      "tx": "GQtUBiccmM6inAHSAAExcNWmKGgsmggJmmLuryFmUY4o"
+      "tx": "714PDWd6t9zodBLC9U5SsVLNyCQj4MrCW7S8v3mzY81A"
     },
     {
-      "step": 45,
+      "step": 51,
       "title": "Cheat: Emeka sends the surgery money to the family's account instead",
       "ok": false,
       "refused": true,
       "verdict": "Refused: \"This money cannot go to ngozi-family.purposesplit.testnet. This pot pays only lagoonheights.purposesplit.testnet or cornercare.purposesplit.testnet.\"",
-      "tx": "DVY8RGWekmag7KnnBjfGjaJeTvuEk2mRBHHR6YSFpgaK"
+      "tx": "By8z2VFjsQ8MCY3KYgCR9JFmgggoEpoRwTkwPxUZtwGF"
     },
     {
-      "step": 46,
+      "step": 52,
       "title": "Cheat: Emeka pays the hospital's bill to the pharmacy",
       "ok": false,
       "refused": true,
       "verdict": "Refused: \"cornercare.purposesplit.testnet has not asked for 380 tUSD. Money leaves this pot only against a payment request from the payee.\"",
-      "tx": "A4D5PzhZABYeM4rC82HYANG537UMZCz6WNim9QhhTyrt"
+      "tx": "31KGqhXN9fnaVpXmcEJfcLafxTgSeAp3Pfk67SFWDQH3"
     },
     {
-      "step": 47,
+      "step": 53,
       "title": "Emeka pays the hospital's bill of 380",
       "ok": true,
       "refused": false,
       "verdict": "Done",
-      "tx": "9Wj2J2tsXPoYsdPtYp9HWgz9Zkkaiwn7kCFfWAGVSimt"
+      "tx": "BPxNDtLvbtsfjejHDR5cTdDysSCV2ZcRVfmqmDGZhdaT"
     },
     {
-      "step": 48,
+      "step": 54,
       "title": "The hospital confirms the payment on-chain",
       "ok": true,
       "refused": false,
       "verdict": "Done",
-      "tx": "J1DXYRe2tp7ed6RMTf8uoaqiuCZZwvV7jbZV9QaqpeQt"
+      "tx": "HVBU8pHchoYX1Muzcoyefk2CPVT3HaPEib1cFuuVRJrg"
     },
     {
-      "step": 49,
+      "step": 55,
       "title": "The pharmacy sends its bill: 70 for medicine",
       "ok": true,
       "refused": false,
       "verdict": "Done",
-      "tx": "D8JMFRJGeeJ96otibQsEmzMD9HMPZFk6R8nQHzkdVwkU"
+      "tx": "8R1fbEscmVJuMkTGUYHr1jAJvTheppF3Mn7uQLyg6DjV"
     },
     {
-      "step": 50,
+      "step": 56,
       "title": "Emeka pays the pharmacy's bill of 70",
       "ok": true,
       "refused": false,
       "verdict": "Done",
-      "tx": "7YtgdUBJTXrEeBcJkKRXcteDqtMcuVjUHFuJnJdbQRiK"
+      "tx": "BMZwgcsD9aDaBZepT8gUpUnzUzND6NAxozN3WwHrEDpA"
     },
     {
-      "step": 51,
+      "step": 57,
+      "title": "The pharmacy confirms the payment on-chain",
+      "ok": true,
+      "refused": false,
+      "verdict": "Done",
+      "tx": "8M9CkAvyLtq4cD7yiwAu73GoFvNAsXEPdHnT2tRFKm3t"
+    },
+    {
+      "step": 58,
+      "title": "Emeka holds proof for every giver to see: both bills were paid and confirmed",
+      "ok": true,
+      "refused": false,
+      "verdict": "Checked: \"Hospital bill paid: Lagoon Heights Hospital (demo)\" (2-0), \"Paid: Corner Care Pharmacy (demo)\" (2-1)",
+      "tx": null
+    },
+    {
+      "step": 59,
       "title": "After the deadline, anyone settles the family pot: the unused 20 goes back to Mum and Uncle Femi",
       "ok": true,
       "refused": false,
       "verdict": "Done",
-      "tx": "8P4moESbSvdaWEWC1zsGvLp6UBPrdFA6fFiV3Nf64dzi"
+      "tx": "DXxPJcfybCarYFdcfq4GK5Z9HYzPhwH4r7DpMrox8oRU"
     },
     {
-      "step": 52,
+      "step": 60,
       "title": "After the deadline, anyone settles the street pot: the unused 20 goes back, 4 to each resident",
       "ok": true,
       "refused": false,
       "verdict": "Done",
-      "tx": "3VB25y9DVxi7zpCRSpYKnMVpgBhac93Tmr1Ftme5L7wt"
+      "tx": "7JzATUrWcX2rh4zs1ne6LUqh5EzWYJrDjUSMgviy88Mj"
     },
     {
-      "step": 53,
+      "step": 61,
       "title": "After the deadline, anyone settles the appeal: the unused 50 goes back, 10 to each giver",
       "ok": true,
       "refused": false,
       "verdict": "Done",
-      "tx": "8sDsA7wCep69ocFtv8ParWGY7fhEG42rFFS6VBUr8L5c"
+      "tx": "6HKXb4R6HLUFrcajh5MPTBpNtGTMpohTYMjy2AT8S74J"
     }
   ]
 }

@@ -85,7 +85,7 @@ fn at(who: AccountId, minutes: u64) {
 /// A contract with UNILAG, LASU and Sparks Electrical on the verified list.
 fn setup() -> Contract {
     at(acc("deployer.testnet"), 0);
-    let mut c = Contract::new(token(), registry(), "tUSD".into(), 6);
+    let mut c = Contract::new(token(), registry(), "tUSD".into(), 6, None);
     at(registry(), 0);
     c.add_payee(unilag(), "University of Lagos".into(), PayeeKind::School, "https://unilag.example/pay".into());
     c.add_payee(lasu(), "Lagos State University".into(), PayeeKind::School, "https://lasu.example/pay".into());
@@ -1019,4 +1019,307 @@ fn a_payee_cannot_be_named_twice() {
     let mut c = setup();
     ctx(mum(), NearToken::from_near(1), 0);
     c.create_pot(PotKind::Personal, "Twice".into(), vec![unilag(), unilag()], "".into(), tolu(), U128(D), 60, None, None);
+}
+
+// ------------------------------------------------------------------- passes
+
+/// Tolu pays the school's 280 bill and the school confirms it. Returns the pot.
+fn paid_and_confirmed_fees(c: &mut Contract) -> u64 {
+    let id = funded_family_pot(c);
+    at(tolu(), 5);
+    let _ = c.pay_request(id, 0);
+    at(unilag(), 6);
+    assert_eq!(c.confirm_payment(id, 0), format!("{id}-0"));
+    id
+}
+
+#[test]
+fn the_student_gets_a_fees_paid_pass_when_the_school_confirms() {
+    let mut c = setup();
+    let id = paid_and_confirmed_fees(&mut c);
+    assert!(logged("nft_mint"), "wallets and explorers are told in the standard way");
+
+    let passes = c.get_passes(tolu(), None, None);
+    assert_eq!(passes.len(), 1);
+    let pass = &passes[0];
+    assert_eq!(pass.title, "Fees paid: University of Lagos");
+    assert_eq!(pass.holder, tolu());
+    assert_eq!(pass.payee, unilag());
+    assert_eq!(pass.amount.0, 280 * D);
+    assert_eq!(pass.reference, "MAT/2024/0193");
+    assert_eq!(pass.confirmed_at_ns, (START + 6 * MINUTE).to_string());
+    assert_eq!(c.get_pass(id, 0).as_ref(), Some(pass));
+    assert_eq!(c.get_pot(id).unwrap().payments[0].pass_id, Some(format!("{id}-0")));
+    assert_eq!(c.get_totals().passes, 1);
+}
+
+#[test]
+fn there_is_no_pass_until_the_school_confirms() {
+    let mut c = setup();
+    let id = funded_family_pot(&mut c);
+    assert!(c.get_passes(tolu(), None, None).is_empty(), "nothing is paid yet");
+    at(tolu(), 5);
+    let _ = c.pay_request(id, 0);
+    // Paid, but the school has not said it arrived.
+    assert!(c.get_passes(tolu(), None, None).is_empty());
+    assert_eq!(c.get_pass(id, 0), None);
+    assert_eq!(c.nft_token(format!("{id}-0")), None);
+    assert_eq!(c.get_pot(id).unwrap().payments[0].pass_id, None);
+    assert_eq!(c.nft_total_supply().0, 0);
+}
+
+#[test]
+fn a_student_cannot_give_himself_a_pass() {
+    let mut c = setup();
+    let id = funded_family_pot(&mut c);
+    at(tolu(), 5);
+    let _ = c.pay_request(id, 0);
+    // Only the school that was paid can confirm, so only it can cause a pass.
+    at(tolu(), 6);
+    let tried = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        c.confirm_payment(id, 0);
+    }));
+    assert!(tried.is_err());
+    assert!(c.get_passes(tolu(), None, None).is_empty());
+}
+
+#[test]
+#[should_panic(expected = "This payment is already confirmed")]
+fn one_payment_gives_one_pass_only() {
+    let mut c = setup();
+    let id = paid_and_confirmed_fees(&mut c);
+    at(unilag(), 7);
+    c.confirm_payment(id, 0);
+}
+
+#[test]
+#[should_panic(expected = "A pass cannot be moved or sold")]
+fn a_pass_cannot_be_given_to_a_friend() {
+    let mut c = setup();
+    let id = paid_and_confirmed_fees(&mut c);
+    ctx(tolu(), NearToken::from_yoctonear(1), 7);
+    c.nft_transfer(acc("friend.testnet"), format!("{id}-0"), None, None);
+}
+
+#[test]
+#[should_panic(expected = "A pass cannot be moved or sold")]
+fn a_pass_cannot_be_sent_to_a_marketplace() {
+    let mut c = setup();
+    let id = paid_and_confirmed_fees(&mut c);
+    ctx(tolu(), NearToken::from_yoctonear(1), 7);
+    c.nft_transfer_call(acc("market.testnet"), format!("{id}-0"), None, None, "{}".into());
+}
+
+#[test]
+fn wallets_can_read_a_pass_as_a_standard_token() {
+    let mut c = setup();
+    let id = paid_and_confirmed_fees(&mut c);
+
+    let meta = c.nft_metadata();
+    assert_eq!(meta.spec, "nft-1.0.0");
+    assert_eq!(meta.name, "Purpose Split passes");
+
+    let token = c.nft_token(format!("{id}-0")).unwrap();
+    assert_eq!(token.owner_id, tolu());
+    let m = token.metadata.unwrap();
+    assert_eq!(m.title.as_deref(), Some("Fees paid: University of Lagos"));
+    let words = m.description.unwrap();
+    assert!(words.contains("280 tUSD"), "{words}");
+    assert!(words.contains("University of Lagos confirmed it"), "{words}");
+    assert!(words.contains("MAT/2024/0193"), "{words}");
+    assert_eq!(m.issued_at, Some(((START + 6 * MINUTE) / 1_000_000).to_string()));
+    assert_eq!(m.copies, Some(1));
+
+    assert_eq!(c.nft_total_supply().0, 1);
+    assert_eq!(c.nft_supply_for_owner(tolu()).0, 1);
+    assert_eq!(c.nft_supply_for_owner(mum()).0, 0);
+    assert_eq!(c.nft_tokens(None, None).len(), 1);
+    assert_eq!(c.nft_tokens_for_owner(tolu(), None, None).len(), 1);
+    assert!(c.nft_tokens_for_owner(mum(), None, None).is_empty());
+}
+
+#[test]
+fn only_exact_pass_names_are_recognised() {
+    let mut c = setup();
+    let id = paid_and_confirmed_fees(&mut c);
+    assert!(c.nft_token(format!("{id}-0")).is_some());
+    for odd in ["", "0", "-", "0-", "-0", "00-0", "0-00", "0-1", "9-0", "a-b", "0-0-0", " 0-0", "+0-0"] {
+        if odd == format!("{id}-0") {
+            continue;
+        }
+        assert_eq!(c.nft_token(odd.to_string()), None, "{odd:?} must not name a pass");
+    }
+}
+
+#[test]
+fn the_art_wallets_show_is_set_once_when_the_contract_is_made() {
+    at(acc("deployer.testnet"), 0);
+    let art = "https://purposesplit.example/pass.svg".to_string();
+    let mut c = Contract::new(token(), registry(), "tUSD".into(), 6, Some(art.clone()));
+    assert_eq!(c.get_config().pass_art, Some(art.clone()));
+    at(registry(), 0);
+    c.add_payee(unilag(), "University of Lagos".into(), PayeeKind::School, "https://unilag.example/pay".into());
+    let id = paid_and_confirmed_fees(&mut c);
+    assert_eq!(c.nft_token(format!("{id}-0")).unwrap().metadata.unwrap().media, Some(art));
+}
+
+#[test]
+#[should_panic(expected = "pass_art must be an https link")]
+fn the_art_must_be_a_real_link() {
+    at(acc("deployer.testnet"), 0);
+    Contract::new(token(), registry(), "tUSD".into(), 6, Some("javascript:alert(1)".into()));
+}
+
+#[test]
+fn a_street_gets_a_pass_for_each_stage_it_paid() {
+    let mut c = setup();
+    let id = funded_street_pot(&mut c);
+    at(street_dao(), 3);
+    let _ = c.pay_request(id, 0);
+    at(street_dao(), 4);
+    let _ = c.pay_request(id, 1);
+    at(sparks(), 5);
+    c.confirm_payment(id, 0);
+    // Only the first stage is confirmed so far.
+    let passes = c.get_passes(street_dao(), None, None);
+    assert_eq!(passes.len(), 1);
+    assert_eq!(passes[0].title, "Paid: Sparks Electrical");
+    assert_eq!(passes[0].amount.0, 100 * D);
+    at(sparks(), 6);
+    c.confirm_payment(id, 1);
+    let passes = c.get_passes(street_dao(), None, None);
+    assert_eq!(passes.iter().map(|p| p.token_id.clone()).collect::<Vec<_>>(), vec![format!("{id}-0"), format!("{id}-1")]);
+    assert!(c.get_passes(chairman(), None, None).is_empty(), "the chairman started the pot, but the street paid");
+    // Reading in pages.
+    assert_eq!(c.get_passes(street_dao(), Some(1), Some(5)).len(), 1);
+    assert_eq!(c.nft_tokens(Some(U128(1)), Some(1))[0].token_id, format!("{id}-1"));
+}
+
+#[test]
+fn an_appeals_organiser_gets_proof_the_hospital_was_paid() {
+    let mut c = setup();
+    let id = appeal(&mut c);
+    for i in 1..=5 {
+        add(&mut c, id, resident(i), 100 * D, "purpose", 1);
+    }
+    bill(&mut c, id, hospital(), 380 * D, 2);
+    bill(&mut c, id, pharmacy(), 70 * D, 2);
+    at(organiser(), 3);
+    let _ = c.pay_request(id, 0);
+    at(organiser(), 4);
+    let _ = c.pay_request(id, 1);
+    at(hospital(), 5);
+    c.confirm_payment(id, 0);
+    at(pharmacy(), 6);
+    c.confirm_payment(id, 1);
+    let titles: Vec<String> = c.get_passes(organiser(), None, None).into_iter().map(|p| p.title).collect();
+    assert_eq!(titles, vec!["Hospital bill paid: Lagoon Heights Hospital", "Paid: Corner Care Pharmacy"]);
+}
+
+#[test]
+fn one_person_can_hold_passes_from_several_pots() {
+    let mut c = setup();
+    let first = paid_and_confirmed_fees(&mut c);
+    // A second pot, for another school, with the same student pressing pay.
+    ctx(mum(), NearToken::from_near(1), 10);
+    let second = c.create_pot(PotKind::Personal, "Summer course".into(), vec![lasu()], "".into(), tolu(), U128(50 * D), 60, None, None);
+    add(&mut c, second, mum(), 50 * D, "purpose", 11);
+    bill(&mut c, second, lasu(), 50 * D, 12);
+    at(tolu(), 13);
+    let _ = c.pay_request(second, 0);
+    at(lasu(), 14);
+    c.confirm_payment(second, 0);
+    let ids: Vec<String> = c.get_passes(tolu(), None, None).into_iter().map(|p| p.token_id).collect();
+    assert_eq!(ids, vec![format!("{first}-0"), format!("{second}-0")]);
+    assert_eq!(c.nft_supply_for_owner(tolu()).0, 2);
+    assert_books_balance(&c);
+}
+
+#[test]
+fn a_pass_still_names_the_payee_if_it_later_leaves_the_list() {
+    let mut c = setup();
+    let id = paid_and_confirmed_fees(&mut c);
+    at(registry(), 20);
+    c.remove_payee(unilag());
+    // The payment happened, so the pass stays. It names the account that was paid.
+    let pass = c.get_pass(id, 0).unwrap();
+    assert_eq!(pass.title, format!("Paid: {}", unilag()));
+    assert_eq!(pass.payee, unilag());
+    assert_eq!(pass.payee_name, None);
+}
+
+#[test]
+fn a_new_pot_prepays_room_for_its_passes() {
+    let mut c = setup();
+    ctx(mum(), NearToken::from_near(1), 0);
+    let before = env::storage_usage();
+    let id = simple(&mut c, unilag(), tolu());
+    let record = env::storage_usage() - before;
+    // The smallest deposit the contract accepts must cover the record plus every
+    // slot it can ever fill, passes included.
+    let slots = BYTES_PER_SLOT * (MAX_CONTRIBUTORS + MAX_PAYMENTS) as u64
+        + (BYTES_PER_SLOT + MAX_NOTE_BYTES as u64) * MAX_REQUESTS as u64
+        + BYTES_PER_PASS * MAX_PAYMENTS as u64
+        + BYTES_PER_HOLDER;
+    let need = env::storage_byte_cost().saturating_mul(u128::from(record + slots));
+    assert!(need < NearToken::from_millinear(100), "a new pot must cost under 0.1 NEAR, got {need}");
+    assert!(c.get_pot(id).is_some());
+}
+
+/// The longest account name NEAR allows: 64 characters.
+fn long(i: usize) -> AccountId {
+    acc(&format!("{:0>64}", format!("{i:x}")))
+}
+
+#[test]
+fn a_completely_full_pot_never_outgrows_what_its_creator_paid_for() {
+    at(acc("deployer.testnet"), 0);
+    let mut c = Contract::new(token(), registry(), "tUSD".into(), 6, None);
+    let (school, student) = (long(1000), long(1001));
+    at(registry(), 0);
+    c.add_payee(school.clone(), "n".repeat(MAX_NAME_BYTES), PayeeKind::School, format!("https://{}", "e".repeat(MAX_EVIDENCE_BYTES - 8)));
+
+    // Create the pot with the longest names and texts allowed.
+    ctx(long(999), NearToken::from_near(1), 0);
+    let before_create = env::storage_usage();
+    let id = c.create_pot(
+        PotKind::Personal,
+        "t".repeat(MAX_TITLE_BYTES),
+        vec![school.clone()],
+        "r".repeat(MAX_REFERENCE_BYTES),
+        student.clone(),
+        U128(1_200 * D),
+        60,
+        None,
+        None,
+    );
+    c.pots.flush();
+    let record = env::storage_usage() - before_create;
+    let prepaid = record
+        + BYTES_PER_SLOT * (MAX_CONTRIBUTORS + MAX_PAYMENTS) as u64
+        + (BYTES_PER_SLOT + MAX_NOTE_BYTES as u64) * MAX_REQUESTS as u64
+        + BYTES_PER_PASS * MAX_PAYMENTS as u64
+        + BYTES_PER_HOLDER;
+
+    // Fill every slot: 12 givers, 12 bills with the longest notes, 12 payments, 12 passes.
+    for i in 0..MAX_CONTRIBUTORS {
+        add(&mut c, id, long(i), 100 * D, "purpose", 1);
+    }
+    for i in 0..MAX_REQUESTS {
+        at(school.clone(), 2);
+        c.request_payment(id, U128(100 * D), "n".repeat(MAX_NOTE_BYTES));
+        at(student.clone(), 3);
+        let _ = c.pay_request(id, i as u32);
+        at(school.clone(), 4);
+        c.confirm_payment(id, i as u32);
+    }
+    c.pots.flush();
+    c.passes.flush();
+    c.passes_of.flush();
+    let used = env::storage_usage() - before_create;
+
+    assert_eq!(c.get_pot(id).unwrap().payments.len(), MAX_PAYMENTS);
+    assert_eq!(c.get_passes(student, None, None).len(), MAX_PAYMENTS);
+    println!("full pot: used {used} bytes of {prepaid} prepaid (record {record})");
+    assert!(used <= prepaid, "a full pot uses {used} bytes but its creator paid for {prepaid}");
 }

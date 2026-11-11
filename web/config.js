@@ -4,7 +4,7 @@
 export const RPCS = ["https://test.rpc.fastnear.com", "https://rpc.testnet.near.org"];
 export const EXPLORER = "https://testnet.nearblocks.io";
 export const ROOT = "purposesplit.testnet";
-export const POTS = `pots-dev5.${ROOT}`;
+export const POTS = `pots-dev6.${ROOT}`;
 export const TOKEN = `tusd.${ROOT}`;
 export const GITHUB = ""; // filled in once the repository is public
 
@@ -13,7 +13,7 @@ export const STORY = { family: 0, street: 1, appeal: 2 };
 // Open pots kept funded for 30 days, so anyone can try to cheat them live.
 export const LIVE = { family: 3, street: 4, appeal: 5 };
 // The "split" box: one school year paid to the school, a bookshop and a hostel, plus pocket money.
-export const SPLIT = 7;
+export const SPLIT = 6;
 
 const s = (name) => `${name}.${ROOT}`;
 
@@ -120,10 +120,12 @@ export const CHEATS = {
 // and confirm payments on the money-box contract: it cannot move any money. They
 // are published on purpose so any visitor can "play the school" on testnet.
 export const DEMO_KEYS = {
-  "llu.purposesplit.testnet": "ed25519:2XmTPR8oTSRdzMzzMgLjoMvNiJ2qndrgxHFv3QByhLjJGZ51BcuTt8AMe6PBC5xoegjGEoXUwn474GjcLXKifJN",
-  "sparks.purposesplit.testnet": "ed25519:3U75UA5xaV63QaVFwqeFseSk6jWtUxbRdBnJmZzCix7g3shm3yxEt5CtKrrgfM2B2yh2aYT9ZthjM2UMeaKEQfxk",
-  "lagoonheights.purposesplit.testnet": "ed25519:5cEXQDDjfgkf4GJPM1usfiVhWCpYSex49CT6GZjj2818KfgrJ5fKs5phWYZPj1gR23BwiZkKKbLySMeogyfPHBCu",
-  "cornercare.purposesplit.testnet": "ed25519:S7Fm6N2dskjJfTcbLsS5i7ip6kLJaBAABzNFJjhBypy7SV2sVGyJowDsPu6WujGm9gCVEC9WfHNUaXn8YxqFNYL"
+  "llu.purposesplit.testnet": "ed25519:49HMidsZcWnvjKveyuBURN6chpdp9U272Fkzaz2G5yUQ7ksQVVCc2a1zyoPpWnXgcyGSWUqnKqFkZDTDe6vFY7Pi",
+  "sparks.purposesplit.testnet": "ed25519:4vmc7HaUiNHjMxEV3z8TwYov9PmqgtDGxxxmYxx4Qv69hHYc1Nb62NoYvz8qGzaSdk3szxVBuj4BBgjW5GLgHRtK",
+  "lagoonheights.purposesplit.testnet": "ed25519:2XCugtb6iJ7ho2TxmDbmyr8d9RVMqvBXpLJj7U5bu2H5jFJkqAuWUdDFhUQdnECqxT1syuYtxuFAMufBKtWg41zg",
+  "cornercare.purposesplit.testnet": "ed25519:2iUBzzEYd4pF7vTyAKPW9vDoHMpNEEfbDdjDsb1w73uuCSBvKwCZ4GDAunXs3x5U1FMprrRytbLWrd75MFKCKxyx",
+  "campusbooks.purposesplit.testnet": "ed25519:5eHyaqpMz8j34fikxBPQk9Ev15TupT9A4H5uPFH2RZhRxGaMgTSwAXR9hYjbGgK98ApfbUqFPztgsHZ8H7zUvURB",
+  "lagoonhostel.purposesplit.testnet": "ed25519:5UXXKFgSTGfksXedbby7gap8cH2ZQnG8v6wyxNfX3icG1g8gCgHSeJCjsqYFgWXmbXmLmtvyGvoYz4nZXpGz6Fe4"
 };
 
 export const STORAGE_DEPOSIT = "1250000000000000000000"; // 0.00125 NEAR, to register with the token

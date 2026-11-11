@@ -13,9 +13,18 @@
 //!   3. back to the contributors, in proportion, through `settle`.
 //! The verified list changes only when the registry DAO calls this contract.
 //! After deployment the account's keys are deleted, so nobody can change the code.
+//!
+//! When a payee confirms a payment reached it, the contract issues a pass to the
+//! account that paid: proof, for anyone to check, that this bill was paid to this
+//! payee. A student's pass says "Fees paid". A pass is a non-fungible token that
+//! can be read with the usual NEP-171 views, but it cannot be moved or sold.
 
 use near_contract_standards::fungible_token::core::ext_ft_core;
 use near_contract_standards::fungible_token::receiver::FungibleTokenReceiver;
+use near_contract_standards::non_fungible_token::metadata::{
+    NFTContractMetadata, TokenMetadata, NFT_METADATA_SPEC,
+};
+use near_contract_standards::non_fungible_token::Token;
 use near_sdk::json_types::U128;
 use near_sdk::serde::{Deserialize, Serialize};
 use near_sdk::store::{IterableMap, LookupMap, Vector};
@@ -45,6 +54,10 @@ pub const MIN_DEADLINE_MINUTES: u32 = 2;
 pub const MAX_DEADLINE_MINUTES: u32 = 366 * 24 * 60;
 /// Storage the creator pre-pays for every contributor slot and payment record.
 const BYTES_PER_SLOT: u64 = 120;
+/// Storage for one pass in the list of passes, and for the holder's own list.
+const BYTES_PER_PASS: u64 = 60;
+const BYTES_PER_HOLDER: u64 = 120;
+pub const MAX_PASS_ART_BYTES: usize = 200;
 
 const GAS_FT_TRANSFER: Gas = Gas::from_tgas(8);
 const GAS_ON_SENT: Gas = Gas::from_tgas(5);
@@ -97,6 +110,8 @@ pub struct Payment {
     pub amount: u128,
     pub at_ns: u64,
     pub confirmed: bool,
+    /// When the payee confirmed it, or 0 if it has not yet.
+    pub confirmed_at_ns: u64,
     /// The payment request this payment answered.
     pub request_id: u32,
 }
@@ -167,7 +182,31 @@ pub struct PaymentView {
     pub amount: U128,
     pub at_ns: String,
     pub confirmed: bool,
+    pub confirmed_at_ns: String,
+    /// The pass issued for this payment, once the payee has confirmed it.
+    pub pass_id: Option<String>,
     pub request_id: u32,
+}
+
+/// A pass, in plain fields for a website. The same pass is also readable as a
+/// standard token through `nft_token`.
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
+#[serde(crate = "near_sdk::serde")]
+pub struct PassView {
+    pub token_id: String,
+    /// "Fees paid: Lagos Lagoon University"
+    pub title: String,
+    pub holder: AccountId,
+    pub pot_id: u64,
+    pub payment_index: u32,
+    pub pot_title: String,
+    pub reference: String,
+    pub payee: AccountId,
+    pub payee_name: Option<String>,
+    pub payee_kind: Option<PayeeKind>,
+    pub amount: U128,
+    pub paid_at_ns: String,
+    pub confirmed_at_ns: String,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
@@ -235,6 +274,7 @@ pub struct Totals {
     pub pots: u64,
     pub held: U128,
     pub owed: U128,
+    pub passes: u64,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
@@ -246,6 +286,7 @@ pub struct Config {
     pub registry_dao: AccountId,
     pub max_contributors: u32,
     pub max_payments: u32,
+    pub pass_art: Option<String>,
     pub version: String,
 }
 
@@ -282,6 +323,13 @@ pub struct Contract {
     owed: LookupMap<AccountId, u128>,
     total_held: u128,
     total_owed: u128,
+    /// Every pass, in the order issued, as (pot, payment). A pass's details are
+    /// read from the payment it stands for, so they can never disagree with it.
+    passes: Vector<(u32, u32)>,
+    /// For each holder, the positions of their passes in `passes`.
+    passes_of: LookupMap<AccountId, Vec<u32>>,
+    /// A picture wallets can show for a pass. Optional.
+    pass_art: Option<String>,
 }
 
 #[near]
@@ -289,10 +337,23 @@ impl Contract {
     /// `token`: the stablecoin pots are paid in, with its `symbol` and `decimals`
     /// (used only to write amounts in plain words).
     /// `registry_dao`: the Sputnik DAO that adds and removes verified payees.
+    /// `pass_art`: an optional https link to a picture wallets show for a pass.
     #[init]
-    pub fn new(token: AccountId, registry_dao: AccountId, symbol: String, decimals: u8) -> Self {
+    pub fn new(
+        token: AccountId,
+        registry_dao: AccountId,
+        symbol: String,
+        decimals: u8,
+        pass_art: Option<String>,
+    ) -> Self {
         require!(decimals <= 24, "decimals must be at most 24");
         require!(!symbol.is_empty() && symbol.len() <= 12, "symbol must be 1 to 12 bytes");
+        if let Some(art) = &pass_art {
+            require!(
+                art.starts_with("https://") && art.len() <= MAX_PASS_ART_BYTES,
+                "pass_art must be an https link of at most 200 bytes"
+            );
+        }
         Self {
             token,
             symbol,
@@ -303,6 +364,9 @@ impl Contract {
             owed: LookupMap::new(b"o"),
             total_held: 0,
             total_owed: 0,
+            passes: Vector::new(b"n"),
+            passes_of: LookupMap::new(b"h"),
+            pass_art,
         }
     }
 
@@ -479,7 +543,9 @@ impl Contract {
         // and payment it can ever hold, so later steps never run short.
         let bytes = env::storage_usage().saturating_sub(storage_before)
             + BYTES_PER_SLOT * (MAX_CONTRIBUTORS + MAX_PAYMENTS) as u64
-            + (BYTES_PER_SLOT + MAX_NOTE_BYTES as u64) * MAX_REQUESTS as u64;
+            + (BYTES_PER_SLOT + MAX_NOTE_BYTES as u64) * MAX_REQUESTS as u64
+            + BYTES_PER_PASS * MAX_PAYMENTS as u64
+            + BYTES_PER_HOLDER;
         let cost = env::storage_byte_cost().saturating_mul(u128::from(bytes));
         let attached = env::attached_deposit();
         require!(
@@ -602,9 +668,11 @@ impl Contract {
         self.pay(pot_id, to, amount.0, None)
     }
 
-    /// The payee confirms that a payment reached it and was credited.
-    pub fn confirm_payment(&mut self, pot_id: u64, payment_index: u32) {
+    /// The payee confirms that a payment reached it and was credited. This
+    /// issues a pass to the account that paid, and returns the pass's id.
+    pub fn confirm_payment(&mut self, pot_id: u64, payment_index: u32) -> String {
         let caller = env::predecessor_account_id();
+        let now = env::block_timestamp();
         let pot = self.pot_mut(pot_id);
         let payment = pot
             .payments
@@ -613,10 +681,13 @@ impl Contract {
         require!(caller == payment.to, "Only the payee that was paid can confirm a payment");
         require!(!payment.confirmed, "This payment is already confirmed");
         payment.confirmed = true;
+        payment.confirmed_at_ns = now;
+        let holder = pot.releaser.clone();
         event(
             "payment_confirmed",
             serde_json::json!({ "pot_id": pot_id, "payment_index": payment_index, "by": caller }),
         );
+        self.issue_pass(pot_id, payment_index, holder)
     }
 
     /// Returns every unused coin to the contributors, in proportion to what each
@@ -720,6 +791,7 @@ impl Contract {
             registry_dao: self.registry_dao.clone(),
             max_contributors: MAX_CONTRIBUTORS as u32,
             max_payments: MAX_PAYMENTS as u32,
+            pass_art: self.pass_art.clone(),
             version: env!("CARGO_PKG_VERSION").to_string(),
         }
     }
@@ -766,7 +838,115 @@ impl Contract {
             pots: u64::from(self.pots.len()),
             held: U128(self.total_held),
             owed: U128(self.total_owed),
+            passes: u64::from(self.passes.len()),
         }
+    }
+
+    // ------------------------------------------------------------------ passes
+
+    /// The passes an account holds, newest last. Each one is proof that a bill
+    /// was paid to a verified payee and that the payee confirmed it.
+    pub fn get_passes(
+        &self,
+        account_id: AccountId,
+        from_index: Option<u32>,
+        limit: Option<u32>,
+    ) -> Vec<PassView> {
+        self.passes_of
+            .get(&account_id)
+            .map(|list| {
+                list.iter()
+                    .skip(from_index.unwrap_or(0) as usize)
+                    .take(limit.unwrap_or(50).min(100) as usize)
+                    .filter_map(|n| self.passes.get(*n))
+                    .filter_map(|(pot, payment)| self.pass(*pot, *payment))
+                    .collect()
+            })
+            .unwrap_or_default()
+    }
+
+    /// The pass for one payment of one pot, if the payee has confirmed it.
+    pub fn get_pass(&self, pot_id: u64, payment_index: u32) -> Option<PassView> {
+        self.pass(u32::try_from(pot_id).ok()?, payment_index)
+    }
+
+    // The usual NEP-171 / NEP-177 / NEP-181 views, so wallets and explorers can
+    // show a pass like any other token.
+
+    pub fn nft_metadata(&self) -> NFTContractMetadata {
+        NFTContractMetadata {
+            spec: NFT_METADATA_SPEC.to_string(),
+            name: "Purpose Split passes".to_string(),
+            symbol: "PAID".to_string(),
+            icon: None,
+            base_uri: None,
+            reference: None,
+            reference_hash: None,
+        }
+    }
+
+    pub fn nft_token(&self, token_id: String) -> Option<Token> {
+        let (pot, payment) = parse_pass_id(&token_id)?;
+        self.pass(pot, payment).map(|p| self.token(&p))
+    }
+
+    pub fn nft_total_supply(&self) -> U128 {
+        U128(u128::from(self.passes.len()))
+    }
+
+    pub fn nft_tokens(&self, from_index: Option<U128>, limit: Option<u64>) -> Vec<Token> {
+        let from = from_index.map(|v| v.0).unwrap_or(0);
+        let limit = limit.unwrap_or(50).min(100);
+        (from..u128::from(self.passes.len()).min(from.saturating_add(u128::from(limit))))
+            .filter_map(|n| self.passes.get(n as u32))
+            .filter_map(|(pot, payment)| self.pass(*pot, *payment))
+            .map(|p| self.token(&p))
+            .collect()
+    }
+
+    pub fn nft_supply_for_owner(&self, account_id: AccountId) -> U128 {
+        U128(self.passes_of.get(&account_id).map(|l| l.len() as u128).unwrap_or(0))
+    }
+
+    pub fn nft_tokens_for_owner(
+        &self,
+        account_id: AccountId,
+        from_index: Option<U128>,
+        limit: Option<u64>,
+    ) -> Vec<Token> {
+        let from = from_index.map(|v| v.0).unwrap_or(0).min(u128::from(u32::MAX)) as u32;
+        let limit = limit.unwrap_or(50).min(100) as u32;
+        self.get_passes(account_id, Some(from), Some(limit))
+            .iter()
+            .map(|p| self.token(p))
+            .collect()
+    }
+
+    /// A pass cannot be moved: it is proof that this account paid, so it stays
+    /// with this account. This method exists only to say so in plain words.
+    #[payable]
+    pub fn nft_transfer(
+        &mut self,
+        receiver_id: AccountId,
+        token_id: String,
+        approval_id: Option<u64>,
+        memo: Option<String>,
+    ) {
+        let _ = (receiver_id, token_id, approval_id, memo);
+        env::panic_str(PASS_STAYS);
+    }
+
+    #[payable]
+    pub fn nft_transfer_call(
+        &mut self,
+        receiver_id: AccountId,
+        token_id: String,
+        approval_id: Option<u64>,
+        memo: Option<String>,
+        msg: String,
+    ) {
+        let _ = (receiver_id, token_id, approval_id, memo, msg);
+        env::panic_str(PASS_STAYS);
     }
 }
 
@@ -878,6 +1058,7 @@ impl Contract {
             amount,
             at_ns: now,
             confirmed: false,
+            confirmed_at_ns: 0,
             request_id,
         });
         let payee = to;
@@ -897,6 +1078,105 @@ impl Contract {
             }),
         );
         self.send(payee, amount, memo)
+    }
+
+    /// Records a pass for a confirmed payment and tells the world about it in
+    /// the standard NEP-171 way, so wallets and explorers pick it up.
+    fn issue_pass(&mut self, pot_id: u64, payment_index: u32, holder: AccountId) -> String {
+        let position = self.passes.len();
+        self.passes.push((pot_id as u32, payment_index));
+        let mut list = self.passes_of.get(&holder).cloned().unwrap_or_default();
+        list.push(position);
+        self.passes_of.insert(holder.clone(), list);
+        let token_id = pass_id(pot_id, payment_index);
+        env::log_str(&format!(
+            "EVENT_JSON:{}",
+            serde_json::json!({
+                "standard": "nep171",
+                "version": "1.0.0",
+                "event": "nft_mint",
+                "data": [{ "owner_id": holder, "token_ids": [token_id] }],
+            })
+        ));
+        token_id
+    }
+
+    /// Reads a pass from the payment it stands for. There is no pass until the
+    /// payee has confirmed the payment.
+    fn pass(&self, pot_id: u32, payment_index: u32) -> Option<PassView> {
+        let pot = self.pots.get(pot_id)?;
+        let payment = pot.payments.get(payment_index as usize)?;
+        if !payment.confirmed {
+            return None;
+        }
+        let payee = self.payees.get(&payment.to);
+        let what = match payee.map(|p| p.kind) {
+            Some(PayeeKind::School) => "Fees paid",
+            Some(PayeeKind::Hospital) => "Hospital bill paid",
+            _ => "Paid",
+        };
+        let name = payee
+            .map(|p| p.name.clone())
+            .unwrap_or_else(|| payment.to.to_string());
+        Some(PassView {
+            token_id: pass_id(u64::from(pot_id), payment_index),
+            title: format!("{what}: {name}"),
+            holder: pot.releaser.clone(),
+            pot_id: u64::from(pot_id),
+            payment_index,
+            pot_title: pot.title.clone(),
+            reference: pot.reference.clone(),
+            payee: payment.to.clone(),
+            payee_name: payee.map(|p| p.name.clone()),
+            payee_kind: payee.map(|p| p.kind),
+            amount: U128(payment.amount),
+            paid_at_ns: payment.at_ns.to_string(),
+            confirmed_at_ns: payment.confirmed_at_ns.to_string(),
+        })
+    }
+
+    /// The same pass in the shape wallets expect.
+    fn token(&self, p: &PassView) -> Token {
+        let to = p.payee_name.clone().unwrap_or_else(|| p.payee.to_string());
+        let reference = if p.reference.is_empty() {
+            String::new()
+        } else {
+            format!(" Reference: {}.", p.reference)
+        };
+        let ms = |ns: &str| (ns.parse::<u64>().unwrap_or(0) / 1_000_000).to_string();
+        Token {
+            token_id: p.token_id.clone(),
+            owner_id: p.holder.clone(),
+            metadata: Some(TokenMetadata {
+                title: Some(p.title.clone()),
+                description: Some(format!(
+                    "{} {} from \"{}\" was paid to {to}, and {to} confirmed it.{reference} This pass cannot be moved or sold.",
+                    self.amount(p.amount.0),
+                    self.symbol,
+                    p.pot_title
+                )),
+                media: self.pass_art.clone(),
+                media_hash: None,
+                copies: Some(1),
+                issued_at: Some(ms(&p.confirmed_at_ns)),
+                expires_at: None,
+                starts_at: None,
+                updated_at: None,
+                extra: Some(
+                    serde_json::json!({
+                        "pot_id": p.pot_id,
+                        "payment_index": p.payment_index,
+                        "payee": p.payee,
+                        "amount": p.amount,
+                        "reference": p.reference,
+                    })
+                    .to_string(),
+                ),
+                reference: None,
+                reference_hash: None,
+            }),
+            approved_account_ids: None,
+        }
     }
 
     fn all_payees_removed(&self, pot: &Pot) -> bool {
@@ -1067,11 +1347,14 @@ impl Contract {
             payments: pot
                 .payments
                 .iter()
-                .map(|p| PaymentView {
+                .enumerate()
+                .map(|(i, p)| PaymentView {
                     to: p.to.clone(),
                     amount: U128(p.amount),
                     at_ns: p.at_ns.to_string(),
                     confirmed: p.confirmed,
+                    confirmed_at_ns: p.confirmed_at_ns.to_string(),
+                    pass_id: p.confirmed.then(|| pass_id(id, i as u32)),
                     request_id: p.request_id,
                 })
                 .collect(),
@@ -1145,6 +1428,21 @@ fn either(accounts: &[AccountId]) -> String {
             rest.iter().map(|a| a.as_str()).collect::<Vec<_>>().join(", ")
         ),
     }
+}
+
+const PASS_STAYS: &str =
+    "A pass cannot be moved or sold. It stays with the account that paid, as proof.";
+
+/// A pass is named after the payment it stands for: pot 7, payment 0 is "7-0".
+pub fn pass_id(pot_id: u64, payment_index: u32) -> String {
+    format!("{pot_id}-{payment_index}")
+}
+
+fn parse_pass_id(token_id: &str) -> Option<(u32, u32)> {
+    let (pot, payment) = token_id.split_once('-')?;
+    let parsed = (pot.parse::<u32>().ok()?, payment.parse::<u32>().ok()?);
+    // Only the exact spelling counts, so "07-0" is not another name for "7-0".
+    (pass_id(u64::from(parsed.0), parsed.1) == token_id).then_some(parsed)
 }
 
 fn memo_for(pot_id: u64, reference: &str) -> String {

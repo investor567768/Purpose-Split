@@ -165,7 +165,40 @@ function cheatSlip(storyKey = "family", { heading = "h2", tabs = true } = {}) {
   </form>`;
 }
 
-function wireCheat(form) {
+/** The "Try to cheat" choices for any box, worked out from the box itself. */
+function cheatFor(p, me) {
+  const s = (n) => `${n}.${ROOT}`;
+  const group = p.kind === "Group";
+  const you = (id, text) => (id === me ? `You, ${text}` : cap(text));
+  const signers = [{ id: p.releaser, label: group ? "The group, after its vote passed" : you(p.releaser, "the one who presses pay"), next: "" }];
+  if (p.creator !== p.releaser) signers.push({ id: p.creator, label: you(p.creator, "the one who started the box"), next: "" });
+  if (me && me !== p.releaser && me !== p.creator) signers.push({ id: me, label: "You", next: "" });
+  signers.push({ id: s("kunle"), label: "A stranger", next: "" });
+
+  const destinations = [{ id: p.releaser, label: group ? "The group's own account" : "The wallet of the one who presses pay" }];
+  if (p.creator !== p.releaser) destinations.push({ id: p.creator, label: "The wallet of the one who started the box" });
+  destinations.push({ id: s("sureodds"), label: "A betting site" }, { id: s("kunle"), label: "A friend who wants a loan" });
+  const other = [s("marinapoly"), s("llu")].find((a) => !p.payees.some((x) => x.account_id === a));
+  if (other) destinations.push({ id: other, label: "A verified payee that is not on this box" });
+  p.payees.forEach((x) => destinations.push({ id: x.account_id, label: `${payeeName(x)}, a payee on this box` }));
+
+  const bill = p.requests.find((x) => x.status === "Open");
+  const base = bill ? bill.amount : BigInt(p.held) > 0n ? p.held : p.target;
+  return {
+    pot: p.id,
+    amount: Number(BigInt(base)) / 1e6,
+    signers,
+    destinations,
+    ideas: [
+      "Send the money to the wallet of whoever presses pay.",
+      "Send it to a betting site.",
+      "Pay a payee an amount it never billed.",
+      "Take the money back before the deadline.",
+    ],
+  };
+}
+
+function wireCheat(form, own) {
   const signer = form.querySelector("[data-signer]");
   const action = form.querySelector("[data-action]");
   const to = form.querySelector("[data-to]");
@@ -180,8 +213,11 @@ function wireCheat(form) {
     verdict.innerHTML = "";
   }
 
+  const configOf = (key) => own || CHEATS[key];
+  const ideasOf = (key) => (own && own.ideas) || IDEAS[key];
+
   function load(key) {
-    const c = CHEATS[key];
+    const c = configOf(key);
     form.dataset.story = key;
     form.querySelectorAll("[data-story-btn]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.storyBtn === key)));
     signer.innerHTML = c.signers.map((s) => `<option value="${esc(s.id)}">${esc(s.label)}</option>`).join("");
@@ -189,8 +225,8 @@ function wireCheat(form) {
     amount.value = c.amount;
     action.value = "send";
     potNo.innerHTML = `<a href="#/pot/${c.pot}">Money box no. ${c.pot}</a>`;
-    form.querySelector("[data-ideas]").innerHTML = IDEAS[key].map((t) => `<li>${esc(t)}</li>`).join("");
-    form.querySelector("[data-ideas-n]").textContent = `(${IDEAS[key].length})`;
+    form.querySelector("[data-ideas]").innerHTML = ideasOf(key).map((t) => `<li>${esc(t)}</li>`).join("");
+    form.querySelector("[data-ideas-n]").textContent = `(${ideasOf(key).length})`;
     showFields();
   }
 
@@ -200,7 +236,7 @@ function wireCheat(form) {
 
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
-    const c = CHEATS[form.dataset.story];
+    const c = configOf(form.dataset.story);
     const refund = action.value === "refund";
     const units = Math.round(Number(amount.value) * 1e6);
     if (!refund && (!Number.isFinite(units) || units <= 0)) {
@@ -269,7 +305,7 @@ const QUESTIONS = [
   ["Is this real money?", "No. This runs on NEAR testnet with test dollars (tUSD) that are free and have no value, so you can try every step safely. A real launch would use USDC, a digital dollar that already exists on NEAR."],
   ["Why not just pay the school directly?", "If one parent pays one school, a bank transfer is fine. A money box helps when several people chip in, including relatives abroad. Everyone puts money into one place, everyone can see the school was paid, and whatever isn't used goes back to each of them on its own. Nobody has to trust the person holding the money."],
   ["Can the student send the money anywhere else?", "No. The money box pays only the school named on it, and only against a bill the school itself sent. Try it above: every other destination is refused."],
-  ["Can the parent take the money back?", "Not before the deadline. Once it's in the box, it is kept for its purpose. After the deadline, whatever wasn't used goes back to each person in proportion to what they gave."],
+  ["What is the pass?", `When the school confirms it was paid, the contract gives the student a "Fees paid" pass. Nobody can make one any other way, and it can't be sold or lent to a friend. Anyone can check it, for example before an exam or at the hostel gate. <a href="#/pass">Check a pass</a>.`],
   ["How do you know the account really belongs to the school?", "The contract can't know that by itself, so the list has to be trustworthy. A school is added only by a council vote, and only with a link to where the school itself publishes its account. You see that link before you send. If a school is ever removed, families can take their money back at once."],
   ["Can the people who built this take the money?", "The contract has no function that sends a box's money anywhere except its named payees, its stated free part, or back to the givers. In the final version the contract's keys are deleted so nobody can change that. This practice version is not locked yet."],
   ["What does it cost?", "We charge nothing. Each action is a NEAR transaction with a network fee well under a cent, and creating a money box needs a small one-time storage deposit in NEAR."],
@@ -294,7 +330,7 @@ function home() {
   main.innerHTML = `
   <section class="hero">
     <h1>Parents send school fees. The money can only pay the school.</h1>
-    <p class="lead">The family puts the fees into one money box. The student pays the school from it, and it can't go anywhere else. Everyone sees when the school has it, and whatever isn't used comes back.</p>
+    <p class="lead">The family puts the fees into one money box. The student can pay the school from it, and nobody else. When the school confirms, the student gets a pass that proves the fees are paid.</p>
     <p class="cta">
       <a class="button" href="#try-h">Try to cheat</a>
       <a class="button button--quiet" href="#/try">How to try it</a>
@@ -307,13 +343,13 @@ function home() {
       <p>A parent puts 300 into a money box for the school fees. An uncle abroad adds to the same box.</p>
     </li>
     <li class="slip">
-      <h2>It can't go anywhere else</h2>
+      <h2>It can only pay the school</h2>
       <p>The student's own wallet, a friend who wants a loan, a fake account: the money box says no to all of them.</p>
       <span class="stamp stamp--small stamp--no">Refused</span>
     </li>
     <li class="slip">
-      <h2>The school gets paid</h2>
-      <p>The school sends a bill for 280. The student pays it, the school confirms it, and the 20 left over goes back.</p>
+      <h2>The student gets a pass</h2>
+      <p>The school sends its bill, the student pays it, and the school confirms. The student now holds a "Fees paid" pass that anyone can check.</p>
       <span class="stamp stamp--small stamp--ok">Paid</span>
     </li>
   </ol>
@@ -329,24 +365,19 @@ function home() {
         <h3>How do we know it's really the school?</h3>
         <p>The money box only pays accounts on a verified list. A school gets on the list when a council votes it in, with a link to where the school itself publishes that account. You see the link before you send.</p>
         <p data-evidence class="small"></p>
-        <p><a href="#/pot/${STORY.family}">See a finished box: fees paid and confirmed by the school</a></p>
       </aside>
     </div>
   </section>
 
-  <section class="section" aria-labelledby="split-h">
-    <h2 id="split-h">One box for the whole school year</h2>
-    <p class="lead">Fees, books and hostel rent are paid to different places. One money box can hold all of it, and each payee can only bill for its own part. A labelled part goes straight to the student as pocket money.</p>
+  <section class="section" aria-labelledby="pass-h">
+    <h2 id="pass-h">Proof the fees were paid</h2>
+    <p class="lead">This is a real pass, read from NEAR just now. The school's confirmation made it. Nobody can fake one, sell one or lend one to a friend.</p>
     <div class="pot-grid">
-      <article class="slip">
-        <div class="slip__head"><h3>Where the money went</h3><span class="slip__no"><a href="#/pot/${SPLIT}">Money box no. ${SPLIT}</a></span></div>
-        <div data-split><p class="loading">Reading it from NEAR testnet…</p></div>
-      </article>
+      <div data-pass><p class="loading">Reading the pass from NEAR testnet…</p></div>
       <aside class="prose">
-        <h3>Each payee bills for itself</h3>
-        <p>The school sends a bill for the fees, the bookshop for the books, the hostel for the rent. The student pays each bill, and each payee confirms it on-chain.</p>
-        <p>The bookshop can't be paid more than it billed, and nobody outside the box's list can be paid at all.</p>
-        <p><a href="#/pot/${SPLIT}">Open the box and its receipts</a></p>
+        <h3>Check anyone's pass</h3>
+        <p>An exam officer or a hostel porter types the student's account and sees the answer straight from the contract.</p>
+        ${passForm()}
       </aside>
     </div>
   </section>
@@ -361,30 +392,124 @@ function home() {
     </ul>
   </section>
 
-  <section class="section" aria-labelledby="any-h">
-    <h2 id="any-h">Works for any purpose</h2>
-    <p class="lead">School fees are one example. Any money with a named payee can have rules.</p>
-    <ul class="uses">
-      <li><a href="#/pot/${LIVE.street}"><span class="uses__n">01</span><h3>Street fund</h3><p>Neighbours chip in. Only their vote can pay the electrician.</p><span class="uses__go">See the box</span></a></li>
-      <li><a href="#/pot/${LIVE.appeal}"><span class="uses__n">02</span><h3>Give to a cause, not to a person.</h3><p>Strangers give to a surgery. The money can only pay the hospital and the pharmacy.</p><span class="uses__go">See the appeal</span></a></li>
-      <li><a href="#/start"><span class="uses__n">03</span><h3>Your own</h3><p>Rent, a wedding, a group purchase. Pick who can be paid.</p><span class="uses__go">Start one</span></a></li>
-    </ul>
-  </section>
-
   <section class="section" aria-labelledby="q-h">
     <h2 id="q-h">Questions</h2>
     ${faq(QUESTIONS)}
   </section>`;
 
-  wireCheat(main.querySelector("form.slip"));
-  view(POTS, "get_pot", { pot_id: SPLIT })
-    .then(({ value: p }) => { if (p) main.querySelector("[data-split]").innerHTML = whereItWent(p, { compact: true }); })
-    .catch(() => (main.querySelector("[data-split]").innerHTML = `<p class="error">Couldn't reach NEAR testnet just now.</p>`));
+  wireCheat(main.querySelector("form[data-story]"));
+  wirePassForm(main);
+  view(POTS, "get_pass", { pot_id: STORY.family, payment_index: 0 })
+    .then(({ value, block }) => {
+      main.querySelector("[data-pass]").innerHTML = value ? passCard(value, block) : `<p>No pass has been issued yet.</p>`;
+    })
+    .catch(() => (main.querySelector("[data-pass]").innerHTML = `<p class="error">Couldn't reach NEAR testnet just now.</p>`));
   view(POTS, "get_pot", { pot_id: LIVE.family })
     .then(({ value: p }) => {
       if (p && p.payees[0]) main.querySelector("[data-evidence]").innerHTML = evidenceLine(p.payees[0]);
     })
     .catch(() => {});
+}
+
+// ------------------------------------------------------------------ passes
+
+/** One pass, drawn as a stamped ticket. */
+function passCard(x, block) {
+  const [what, ...rest] = x.title.split(": ");
+  const to = rest.join(": ") || x.payee;
+  return `
+  <article class="pass">
+    <div class="pass__top"><span>Purpose Split pass</span><span>No. ${esc(x.token_id)}</span></div>
+    <h3 class="pass__what">${esc(what)}</h3>
+    <p class="pass__to">${esc(to)}</p>
+    ${field("Held by", `${esc(nameOf(x.holder))} <small>${acct(x.holder)}</small>`)}
+    ${field("Amount", money(x.amount))}
+    ${x.reference ? field("Reference", esc(x.reference)) : ""}
+    ${field("Confirmed by the payee on", when(x.confirmed_at_ns))}
+    <div class="status-line">
+      <span class="stamp stamp--ok">Paid</span>
+      <p class="small">${block ? `Read from ${acct(POTS)} at block ${block.toLocaleString("en-US")}. ` : ""}It cannot be faked, sold or lent.</p>
+    </div>
+    <p class="pass__links"><a href="#/receipt/${x.pot_id}/${x.payment_index}">The receipt</a> <a href="#/pot/${x.pot_id}">The money box</a></p>
+  </article>`;
+}
+
+const ACCOUNT_RE = /^(?=.{2,64}$)[a-z0-9]+([._-][a-z0-9]+)*$/;
+
+function passForm(value = "") {
+  return `<form class="mini pass-form" data-pass-form novalidate>
+    <label class="field"><span class="field__label">A NEAR account</span>
+      <input name="account" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="tolu.${ROOT}" value="${esc(value)}"></label>
+    <button class="button" type="submit">Check</button>
+    <p class="small" data-pass-msg aria-live="polite"></p>
+  </form>`;
+}
+
+function wirePassForm(root) {
+  const form = root.querySelector("[data-pass-form]");
+  if (!form) return;
+  form.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const account = String(new FormData(form).get("account") || "").trim().toLowerCase();
+    if (!ACCOUNT_RE.test(account)) {
+      form.querySelector("[data-pass-msg]").textContent = "Type a NEAR account name, like tolu.purposesplit.testnet.";
+      return;
+    }
+    location.hash = `#/pass/${account}`;
+  });
+}
+
+async function passPage(account) {
+  setTitle("Check a pass");
+  markNav("pass");
+  const valid = account && ACCOUNT_RE.test(account);
+  const demo = `tolu.${ROOT}`;
+  main.innerHTML = `
+  <section class="page-head">
+    <h1>Check a pass</h1>
+    <p class="lead">When a school confirms it was paid, the contract gives the student a pass. Type an account to see its passes. The answer comes straight from NEAR, so nobody can fake it.</p>
+  </section>
+  <div class="pot-grid">
+    <div data-results>${valid ? `<p class="loading">Reading passes for ${esc(account)} from NEAR testnet…</p>` : `<p>Type an account to check, or try the student from our demo: <a href="#/pass/${demo}">${demo}</a>.</p>`}</div>
+    <aside class="slip slip--yellow">
+      <div class="slip__head"><h2>Whose pass?</h2></div>
+      ${passForm(valid ? account : "")}
+      ${currentAccount() ? `<p><a href="#/pass/${esc(currentAccount())}">Check my own account</a></p>` : ""}
+      <p class="small">A pass appears only after a verified payee confirms it was paid. It stays with the account that paid, and it can't be moved.</p>
+    </aside>
+  </div>`;
+  wirePassForm(main);
+  if (!valid) return;
+  const out = main.querySelector("[data-results]");
+  try {
+    const { value: passes, block } = await view(POTS, "get_passes", { account_id: account });
+    if (!document.body.contains(out)) return;
+    out.innerHTML = passes.length
+      ? `<p class="kicker">${passes.length} ${passes.length === 1 ? "pass" : "passes"} held by ${esc(account)}</p><div class="pass-list">${passes.slice().reverse().map((x) => passCard(x, block)).join("")}</div>`
+      : `<div class="slip"><span class="stamp stamp--no">No pass</span><p><strong>${esc(account)}</strong> holds no pass on this contract.</p><p class="small">Either no bill has been paid from a box where this account presses pay, or the payee has not confirmed it yet. Try the student from our demo: <a href="#/pass/${demo}">${demo}</a>.</p></div>`;
+  } catch {
+    out.innerHTML = `<p class="error">Couldn't reach NEAR testnet just now. Reload the page to try again.</p>`;
+  }
+}
+
+/** Where a box is in its life: give, the payee bills, pay, the payee confirms. */
+function nextSteps(p) {
+  const openBill = p.requests.find((x) => x.status === "Open");
+  const unconfirmed = p.payments.find((x) => !x.confirmed);
+  const payees = either(p.payees.map(payeeName));
+  const payer = p.kind === "Group" ? "The group's vote" : cap(SAY[p.releaser] || nameOf(p.releaser));
+  let now, note;
+  if (p.status !== "Open") { now = 4; note = "This box is closed. Whatever wasn't used went back to the people who gave."; }
+  else if (BigInt(p.raised) === 0n) { now = 0; note = "Nobody has given yet. The box needs money before anything else can happen."; }
+  else if (openBill) { now = 2; note = `${payeeOf(p, openBill.payee)} has sent a bill for ${money(openBill.amount)}. ${payer} can pay it now.`; }
+  else if (unconfirmed) { now = 3; note = `The bill is paid. When ${payeeOf(p, unconfirmed.to)} confirms it arrived, a pass is issued.`; }
+  else if (!p.payments.length) { now = 1; note = `There is money in the box. Nothing can leave until ${payees} sends a bill.`; }
+  else { now = 4; note = `Paid and confirmed, and a pass was issued. <a href="#/pass/${esc(p.releaser)}">See the pass</a>. Whatever is left goes back after the deadline.`; }
+  const names = ["Give", "The payee sends a bill", "Pay the bill", "The payee confirms"];
+  return `<div class="nextup" aria-label="What happens next">
+    <ol>${names.map((n, i) => `<li class="${i < now ? "done" : ""}" ${i === now ? 'aria-current="step"' : ""}><span>${i + 1}</span>${n}</li>`).join("")}</ol>
+    <p>${now === 4 && p.status === "Open" ? note : esc(note)}</p>
+  </div>`;
 }
 
 function templateList() {
@@ -583,6 +708,7 @@ async function receiptPage(potId, index) {
       <span class="stamp ${pay.confirmed ? "stamp--ok" : "stamp--no"}">${pay.confirmed ? "Received" : "Not confirmed"}</span>
       <p class="small">${pay.confirmed ? `${esc(payee)} confirmed on-chain that this payment reached it.` : `${esc(payee)} has not confirmed this payment yet.`}</p>
     </div>
+    ${pay.pass_id ? `<p class="small">A pass was issued to ${esc(nameOf(p.releaser))} for this payment. <a href="#/pass/${esc(p.releaser)}">See the pass</a>.</p>` : ""}
     <p class="cta">
       <a class="button" href="https://wa.me/?text=${encodeURIComponent(text)}" target="_blank" rel="noopener">Send the proof to the family</a>
       <a class="button button--quiet" href="#/pot/${p.id}">See the whole money box</a>
@@ -706,6 +832,7 @@ async function potPage(id) {
   const pct = (v) => `${Number((BigInt(v) * 10000n) / target) / 100}%`;
   const showBack = p.status === "Open" && BigInt(p.held) > 0n;
   const cheatKey = p.status === "Open" && !p.deadline_passed ? Object.keys(LIVE).find((k) => LIVE[k] === p.id) : null;
+  const ownCheat = !cheatKey && p.status === "Open" && !p.deadline_passed ? cheatFor(p, currentAccount()) : null;
   const status = p.status === "Open"
     ? p.deadline_passed ? "The deadline has passed. Anyone can close the box to send the rest back." : `Open until ${when(p.deadline_ns)}`
     : "Closed. What was left went back to the people who gave it.";
@@ -716,6 +843,7 @@ async function potPage(id) {
     ${ex ? `<p class="kicker">${esc(ex.kicker)}</p>` : ""}
     <h1>${esc(p.title)}</h1>
     <p class="lead">This money can only go to ${esc(only)}, against their own bills. ${group ? "A vote decides each payment." : `${esc(cap(SAY[p.releaser] || nameOf(p.releaser)))} presses pay.`} Whatever isn't used goes back to the givers.</p>
+    ${nextSteps(p)}
     <div class="split">
       <p><strong>${money(p.target)}</strong> can only go to ${esc(only)}.</p>
       ${hasFree ? `<p><strong>${money(p.free_target)}</strong> more is “${esc(p.free_label)}”, sent straight to ${esc(nameOf(p.free_to))}.</p>` : ""}
@@ -768,7 +896,7 @@ async function potPage(id) {
       <section class="slip" aria-labelledby="payments">
         <div class="slip__head"><h2 id="payments">Payments</h2><span class="slip__no">${p.payments.length}</span></div>
         ${p.payments.length ? `<table class="rows"><thead><tr><th>When</th><th class="num">Amount</th></tr></thead><tbody>
-          ${p.payments.map((x, i) => `<tr><td>${when(x.at_ns)}<div class="status-line"><span class="stamp stamp--small stamp--ok">Paid</span><span>to ${esc(payeeOf(p, x.to))}</span>${x.confirmed ? `<span class="check">confirmed by them</span>` : ""}<a href="#/receipt/${p.id}/${i}">Open the receipt</a></div></td><td class="num">${money(x.amount)}</td></tr>`).join("")}
+          ${p.payments.map((x, i) => `<tr><td>${when(x.at_ns)}<div class="status-line"><span class="stamp stamp--small stamp--ok">Paid</span><span>to ${esc(payeeOf(p, x.to))}</span>${x.confirmed ? `<span class="check">confirmed by them</span>` : ""}<a href="#/receipt/${p.id}/${i}">Open the receipt</a>${x.pass_id ? `<a href="#/pass/${esc(p.releaser)}">See the pass</a>` : ""}</div></td><td class="num">${money(x.amount)}</td></tr>`).join("")}
         </tbody></table>` : `<p>No payments yet.</p>`}
       </section>
       <section class="slip slip--yellow" aria-labelledby="act-h" data-actions>
@@ -777,8 +905,8 @@ async function potPage(id) {
       </section>
     </div>
   </div>
-  ${cheatKey ? `<section class="section" aria-label="Try to cheat this box"><div class="pot-grid">${cheatSlip(cheatKey, { heading: "h2", tabs: false })}<aside class="prose"><h3>Try to cheat this box</h3><p>Pick who is trying and where they send the money. The real contract on NEAR answers, with its reason. Nothing is sent and no wallet is needed.</p></aside></div></section>` : ""}`;
-  if (cheatKey) wireCheat(main.querySelector("form.slip"));
+  ${cheatKey || ownCheat ? `<section class="section" aria-label="Try to cheat this box"><div class="pot-grid">${cheatSlip(cheatKey || "own", { heading: "h2", tabs: false })}<aside class="prose"><h3>Try to spend this box's money on something else</h3><p>Pick who is trying and where they send the money. The real contract on NEAR answers, with its reason. Nothing is sent and no wallet is needed.</p></aside></div></section>` : ""}`;
+  if (cheatKey || ownCheat) wireCheat(main.querySelector("form[data-story]"), ownCheat || undefined);
   renderActions(p);
   const copy = main.querySelector("[data-copy]");
   copy.addEventListener("click", async () => {
@@ -847,7 +975,7 @@ async function renderActions(p) {
     p.payees.filter((x) => x.verified && canPlay(x.account_id)).forEach((x) => blocks.push(billForm(x.account_id, true)));
   }
   p.payments.map((x, i) => ({ ...x, i })).filter((x) => !x.confirmed && canPlay(x.to) && x.to !== me)
-    .forEach((x) => blocks.push(`<p>Play ${esc(payeeOf(p, x.to))}: <button class="button button--quiet" type="button" data-act="playconfirm" data-to="${esc(x.to)}" data-id="${x.i}">Confirm it received ${money(x.amount)}</button></p>`));
+    .forEach((x) => blocks.push(`<p>Play ${esc(payeeOf(p, x.to))}: <button class="button button--quiet" type="button" data-act="playconfirm" data-to="${esc(x.to)}" data-id="${x.i}">Confirm it received ${money(x.amount)}</button></p><p class="small">Confirming is what issues the pass.</p>`));
 
   box.innerHTML = `<div class="slip__head"><h2 id="act-h">What you can do here</h2></div>${blocks.join("")}<p class="small" data-msg aria-live="polite"></p>`;
   const msg = box.querySelector("[data-msg]");
@@ -855,7 +983,7 @@ async function renderActions(p) {
   function billForm(payee, play) {
     return `<form data-bill data-payee="${esc(payee)}" data-play="${play}" class="mini">
       <h3>${play ? `Play ${esc(payeeOf(p, payee))}: send a bill` : "Send a bill"}</h3>
-      ${play ? `<p class="small">This uses the made-up payee's limited demo key. It can only send bills and confirm payments, never move money. No wallet needed.</p>` : ""}
+      ${play ? `<p class="small">${esc(payeeOf(p, payee))} is made up, so you play its part. This uses its limited demo key, which can only send bills and confirm payments, never move money. No wallet needed.</p>` : ""}
       <label class="field"><span class="field__label">Amount</span><span class="amount-row"><input name="amount" type="number" min="0.01" step="any" value="${Math.min(Number(BigInt(p.held) / 1_000_000n) || 50, 280)}"><span>tUSD</span></span></label>
       <label class="field"><span class="field__label">What it's for</span><input name="note" maxlength="80" value="${p.reference ? "Fees for " + esc(p.reference) : "Payment"}"></label>
       <button class="button ${play ? "button--quiet" : ""}" type="submit">Send the bill</button></form>`;
@@ -922,10 +1050,11 @@ function tryPage() {
       <div>
         <h2>Get a testnet wallet</h2>
         <p>Any of these work. Make sure the wallet is set to <strong>testnet</strong>, not mainnet.</p>
+        <p class="small"><strong>Allow pop-ups for this site.</strong> A wallet opens a small window to ask for your approval. If nothing opens when you press a button here, click the pop-up icon in your browser's address bar and choose "Always allow".</p>
         <ul class="howto__links">
           <li><a href="https://wallet.meteorwallet.app" target="_blank" rel="noopener">Meteor Wallet</a> <span class="small">(in the browser; switch the network to testnet)</span></li>
           <li><a href="https://testnet.mynearwallet.com" target="_blank" rel="noopener">MyNearWallet, testnet</a> <span class="small">(in the browser)</span></li>
-          <li>HOT, Sender and Nightly <span class="small">(apps and browser extensions)</span></li>
+          <li>HOT and Nightly <span class="small">(apps and browser extensions)</span></li>
         </ul>
       </div>
     </li>
@@ -1040,7 +1169,11 @@ async function proofPage() {
     main.querySelector("[data-count]").textContent = `${run.steps.length} steps, ${refused} refused`;
     main.querySelector("[data-steps]").innerHTML = run.steps
       .map((s) => {
-        const said = s.refused ? `<span class="said">${esc(s.verdict.replace(/^Refused: /, "Refused: "))}</span>` : "";
+        const said = s.refused
+          ? `<span class="said">${esc(s.verdict)}</span>`
+          : !s.tx && /^Checked: /.test(s.verdict)
+            ? `<span class="noted">${esc(s.verdict.replace(/^Checked: /, "Read from the contract: "))}</span>`
+            : "";
         return `<li><span class="n">${s.step}</span><span class="what">${esc(s.title)}${said}</span>${
           s.tx ? `<a href="${EXPLORER}/txns/${esc(s.tx)}" target="_blank" rel="noopener">Open in explorer</a>` : ""
         }</li>`;
@@ -1100,6 +1233,7 @@ function route() {
   if (parts[0] === "proof") return proofPage();
   if (parts[0] === "start") return startPage();
   if (parts[0] === "try") return tryPage();
+  if (parts[0] === "pass") return passPage(parts[1] ? decodeURIComponent(parts[1]).toLowerCase() : "");
   if (parts[0] === "receipt" && /^\d+$/.test(parts[1] || "") && /^\d+$/.test(parts[2] || "")) return receiptPage(parts[1], parts[2]);
   return home();
 }

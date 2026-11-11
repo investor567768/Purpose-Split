@@ -83,6 +83,7 @@ export function explain(err) {
   const s = String((err && (err.message || err)) || err);
   const m = s.match(/Smart contract panicked: ([^"\\]+)/) || s.match(/panicked: ([^"\\]+)/);
   if (m) return m[1].trim();
+  if (/pop-?up/i.test(s)) return "Your browser blocked the wallet's window. Click the pop-up icon in the address bar, choose \"Always allow\", then press the button again.";
   if (/reject|cancel|closed|denied/i.test(s)) return "You cancelled it in your wallet. Nothing was sent.";
   return s.length > 220 ? s.slice(0, 220) + "…" : s;
 }

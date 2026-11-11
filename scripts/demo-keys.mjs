@@ -7,8 +7,8 @@
 import { KeyPair, actions } from "near-api-js";
 import { account, balanceNear, sub, ROOT } from "./lib.mjs";
 
-const POTS = sub(process.argv[2] || "pots-dev5");
-const PAYEES = ["llu", "sparks", "lagoonheights", "cornercare"];
+const POTS = sub(process.argv[2] || "pots-dev6");
+const PAYEES = ["llu", "sparks", "lagoonheights", "cornercare", "campusbooks", "lagoonhostel"];
 const out = {};
 for (const name of PAYEES) {
   const id = sub(name);

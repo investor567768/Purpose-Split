@@ -14,7 +14,6 @@
     "@near-wallet-selector/modal-ui": "10.1.4",
     "@near-wallet-selector/my-near-wallet": "10.1.4",
     "@near-wallet-selector/nightly": "10.1.4",
-    "@near-wallet-selector/sender": "10.1.4",
     "buffer": "6.0.3",
     "util": "0.12.5"
   },

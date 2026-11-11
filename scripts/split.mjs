@@ -7,7 +7,7 @@ import { D, NEAR, TGAS, ROOT, call, createSub, exists, link, sub, view } from ".
 
 const MODE = process.argv[2] || "dev";
 const TOKEN = sub("tusd");
-const POTS = sub(process.env.PS_POTS || (MODE === "dev" ? "pots-dev5" : "pots"));
+const POTS = sub(process.env.PS_POTS || (MODE === "dev" ? "pots-dev6" : "pots"));
 const REGISTRY = sub(MODE === "dev" ? "registry-dev" : "registry"); // the council DAO in final
 const DAYS30 = 30 * 24 * 60;
 const REG = 1_250_000_000_000_000_000_000n;
@@ -63,6 +63,7 @@ const pot = (await must("The split box is created", call(mum, POTS, "create_pot"
 
 // 3. The family gives.
 await topUp(mum, 360n * D);
+await topUp(uncle, 240n * D);
 await must("Mum adds 300", give(mum, pot, 300n * D));
 await must("Mum adds 60 pocket money", give(mum, pot, 60n * D, "free"));
 await must("Uncle Femi adds 240", give(uncle, pot, 240n * D));

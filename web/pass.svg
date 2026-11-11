@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 600" role="img" aria-label="A Purpose Split pass: paid to a verified payee and confirmed by them">
+  <defs>
+    <filter id="ink" x="-10%" y="-10%" width="120%" height="120%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="5" result="n"/>
+      <feDisplacementMap in="SourceGraphic" in2="n" scale="4"/>
+    </filter>
+    <pattern id="rule" width="600" height="34" patternUnits="userSpaceOnUse">
+      <line x1="0" y1="33" x2="600" y2="33" stroke="#1f5c4c" stroke-opacity="0.16" stroke-width="2" stroke-dasharray="6 6"/>
+    </pattern>
+  </defs>
+  <rect width="600" height="600" fill="#d7dfe6"/>
+  <g transform="translate(60 70)">
+    <rect x="10" y="12" width="480" height="460" fill="#b9c6d0"/>
+    <rect width="480" height="460" fill="#fdfdfb"/>
+    <rect y="110" width="480" height="300" fill="url(#rule)"/>
+    <g fill="#d7dfe6">
+      <circle cx="0" cy="110" r="16"/><circle cx="480" cy="110" r="16"/>
+    </g>
+    <line x1="24" y1="110" x2="456" y2="110" stroke="#1f5c4c" stroke-width="3" stroke-dasharray="2 10" stroke-linecap="round"/>
+    <circle cx="52" cy="56" r="20" fill="none" stroke="#1f5c4c" stroke-width="7"/>
+    <circle cx="52" cy="56" r="8" fill="#5a2d8c"/>
+    <text x="86" y="52" font-family="Arial, Helvetica, sans-serif" font-weight="800" font-size="28" fill="#1f5c4c">Purpose Split</text>
+    <text x="86" y="78" font-family="Arial, Helvetica, sans-serif" font-size="16" fill="#4f7067" letter-spacing="2">PASS</text>
+    <text x="40" y="170" font-family="Arial, Helvetica, sans-serif" font-size="17" fill="#4f7067" letter-spacing="1.5">THE BILL WAS PAID TO</text>
+    <text x="40" y="206" font-family="Arial, Helvetica, sans-serif" font-weight="800" font-size="30" fill="#1f5c4c">a verified payee,</text>
+    <text x="40" y="244" font-family="Arial, Helvetica, sans-serif" font-weight="800" font-size="30" fill="#1f5c4c">and they confirmed it.</text>
+    <text x="40" y="300" font-family="Arial, Helvetica, sans-serif" font-size="17" fill="#4f7067" letter-spacing="1.5">THIS PASS CANNOT BE</text>
+    <text x="40" y="330" font-family="Arial, Helvetica, sans-serif" font-weight="700" font-size="22" fill="#1e2a27">faked, sold or lent.</text>
+    <g transform="translate(330 372) rotate(-11)" filter="url(#ink)">
+      <rect x="-92" y="-44" width="184" height="88" rx="6" fill="none" stroke="#1f5c4c" stroke-width="7"/>
+      <rect x="-80" y="-32" width="160" height="64" rx="3" fill="none" stroke="#1f5c4c" stroke-width="2"/>
+      <text x="0" y="17" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-weight="900" font-size="50" fill="#1f5c4c" letter-spacing="6">PAID</text>
+    </g>
+    <text x="40" y="436" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#4f7067">Check it on NEAR. Money with rules.</text>
+  </g>
+</svg>

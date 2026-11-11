@@ -7,7 +7,6 @@ import { setupMyNearWallet } from "@near-wallet-selector/my-near-wallet";
 import { setupMeteorWallet } from "@near-wallet-selector/meteor-wallet";
 import { setupIntearWallet } from "@near-wallet-selector/intear-wallet";
 import { setupHotWallet } from "@near-wallet-selector/hot-wallet";
-import { setupSender } from "@near-wallet-selector/sender";
 import { setupNightly } from "@near-wallet-selector/nightly";
 import { actionCreators } from "@near-js/transactions";
 import { Account } from "@near-js/accounts";
@@ -20,7 +19,8 @@ const TGAS = 1_000_000_000_000n;
 export async function initWallet({ contractId, network = "testnet", onChange }) {
   const selector = await setupWalletSelector({
     network,
-    modules: [setupMeteorWallet(), setupHotWallet(), setupMyNearWallet(), setupSender(), setupNightly(), setupIntearWallet()],
+    // Sender is left out: we could not get it onto NEAR testnet when we tested it.
+    modules: [setupMeteorWallet(), setupMyNearWallet(), setupHotWallet(), setupNightly(), setupIntearWallet()],
   });
   const modal = setupModal(selector, {
     contractId,

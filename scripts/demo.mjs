@@ -18,7 +18,9 @@ const HERE = path.dirname(fileURLToPath(import.meta.url));
 const WASM = path.join(HERE, "..", "build", "purpose_split.wasm");
 
 const TOKEN = sub("tusd");
-const POTS = sub(process.env.PS_POTS || (MODE === "dev" ? "pots-dev5" : "pots"));
+const POTS = sub(process.env.PS_POTS || (MODE === "dev" ? "pots-dev6" : "pots"));
+// The picture wallets show for a pass. It lives on the website.
+const PASS_ART = process.env.PS_PASS_ART || "https://purpose-split-web.vercel.app/pass.svg";
 const REGISTRY = sub("registry-dev"); // a plain account standing in for the registry DAO
 const STREET = sub("street-dev"); // a plain account standing in for the street DAO
 
@@ -56,6 +58,17 @@ function record(title, r, expectRefusal = false) {
   if (!expectRefusal && !r.ok) throw new Error(`Step failed: ${title}: ${r.error}`);
   return r;
 }
+
+/** Records something read from the contract (no transaction), such as who holds a pass. */
+function note(title, ok, detail) {
+  step += 1;
+  const verdict = ok ? `Checked: ${detail}` : `CHECK FAILED: ${detail}`;
+  console.log(`${String(step).padStart(2)}. ${title}\n    ${verdict}`);
+  log.push({ step, title, ok, refused: false, verdict, tx: null });
+  if (!ok) throw new Error(`Check failed: ${title}: ${detail}`);
+}
+
+const passesOf = (id) => view(POTS, "get_passes", { account_id: id });
 
 const pay = (signer, pot, to, amount) =>
   call(signer, POTS, "pay_to", { pot_id: pot, to, amount: String(amount) }, { gas: 100n * TGAS });
@@ -116,7 +129,7 @@ if (MODE === "dev") {
     execFileSync(
       "node",
       ["--no-warnings", path.join(HERE, "deploy.mjs"), POTS.split(".")[0], WASM, "4", "new",
-        JSON.stringify({ token: TOKEN, registry_dao: REGISTRY, symbol: "tUSD", decimals: 6 })],
+        JSON.stringify({ token: TOKEN, registry_dao: REGISTRY, symbol: "tUSD", decimals: 6, pass_art: PASS_ART })],
       { stdio: "inherit" }
     );
   }
@@ -178,7 +191,17 @@ record("Cheat: Mum tries to take the fees back early", await pay(P.mum, fam, P.m
 record("Cheat: Tolu pays the school less than it billed, to keep the rest in play", await pay(P.tolu, fam, P.school, 150n * D), true);
 record("Tolu pays the school's bill of 280, with his matric number attached",
   await call(P.tolu, POTS, "pay_request", { pot_id: fam, request_id: 0 }, { gas: 100n * TGAS }));
+record("Cheat: Tolu confirms the payment himself, to get a \"Fees paid\" pass without the school",
+  await call(P.tolu, POTS, "confirm_payment", { pot_id: fam, payment_index: 0 }), true);
 record("The school confirms the payment on-chain", await call(P.school, POTS, "confirm_payment", { pot_id: fam, payment_index: 0 }));
+{
+  const passes = await passesOf(P.tolu);
+  const mine = passes.find((x) => x.pot_id === fam);
+  note("Tolu now holds a pass that anyone can check", Boolean(mine) && mine.title.startsWith("Fees paid"),
+    mine ? `"${mine.title}", pass ${mine.token_id}, held by ${mine.holder}` : "no pass found");
+}
+record("Cheat: Tolu tries to give his pass to a friend",
+  await call(P.tolu, POTS, "nft_transfer", { receiver_id: P.lookalike, token_id: `${fam}-0` }, { deposit: 1n }), true);
 record("Cheat: Tolu tries to pay out more than is left", await pay(P.tolu, fam, P.school, 21n * D), true);
 
 // ------------------------------------------------------- part 2: the street
@@ -204,10 +227,17 @@ record("Cheat: a passed vote tries to pay the chairman", await pay(STREET, stree
 record("Cheat: the vote tries to pay an amount the electrician never asked for", await pay(STREET, street, P.sparks, 150n * D), true);
 record("The residents' vote pays the request for parts: 100",
   await call(STREET, POTS, "pay_request", { pot_id: street, request_id: 0 }, { gas: 100n * TGAS }));
+record("Sparks Electrical confirms the 100 arrived", await call(P.sparks, POTS, "confirm_payment", { pot_id: street, payment_index: 0 }));
 record("The light is back: Sparks Electrical asks for the remaining 80",
   await call(P.sparks, POTS, "request_payment", { pot_id: street, amount: String(80n * D), note: "Labour, light restored" }));
 record("The residents' vote pays it",
   await call(STREET, POTS, "pay_request", { pot_id: street, request_id: 1 }, { gas: 100n * TGAS }));
+record("Sparks Electrical confirms the 80 arrived", await call(P.sparks, POTS, "confirm_payment", { pot_id: street, payment_index: 1 }));
+{
+  const passes = (await passesOf(STREET)).filter((x) => x.pot_id === street);
+  note("The street holds proof of both stages it paid for", passes.length === 2,
+    passes.map((x) => `"${x.title}" (${x.token_id})`).join(", ") || "no passes found");
+}
 record("Cheat: a resident asks for a refund before the deadline", await call(P.residents[0], POTS, "settle", { pot_id: street }, { gas: 300n * TGAS }), true);
 
 // ------------------------------------------------------- part 3: an appeal
@@ -240,6 +270,12 @@ record("The pharmacy sends its bill: 70 for medicine",
   await call(P.pharmacy, POTS, "request_payment", { pot_id: appeal, amount: String(70n * D), note: "Medicine after surgery" }));
 record("Emeka pays the pharmacy's bill of 70",
   await call(P.organiser, POTS, "pay_request", { pot_id: appeal, request_id: 1 }, { gas: 100n * TGAS }));
+record("The pharmacy confirms the payment on-chain", await call(P.pharmacy, POTS, "confirm_payment", { pot_id: appeal, payment_index: 1 }));
+{
+  const passes = (await passesOf(P.organiser)).filter((x) => x.pot_id === appeal);
+  note("Emeka holds proof for every giver to see: both bills were paid and confirmed", passes.length === 2,
+    passes.map((x) => `"${x.title}" (${x.token_id})`).join(", ") || "no passes found");
+}
 
 // ------------------------------------------------------- deadlines, refunds
 const famPot = await view(POTS, "get_pot", { pot_id: fam });

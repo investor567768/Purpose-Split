@@ -2,11 +2,11 @@
 // one family pot and one street pot, each open for 30 days.
 // Usage: node showcase.mjs [dev|final]   Prints the two pot ids.
 
-import { D, NEAR, TGAS, call, link, sub } from "./lib.mjs";
+import { D, NEAR, TGAS, call, link, sub, view } from "./lib.mjs";
 
 const MODE = process.argv[2] || "dev";
 const TOKEN = sub("tusd");
-const POTS = sub(process.env.PS_POTS || (MODE === "dev" ? "pots-dev5" : "pots"));
+const POTS = sub(process.env.PS_POTS || (MODE === "dev" ? "pots-dev6" : "pots"));
 const STREET = sub(MODE === "dev" ? "street-dev" : "adeyemi-street"); // replaced by the DAO in final
 const DAYS30 = 30 * 24 * 60;
 
@@ -20,6 +20,16 @@ const give = (from, pot, amount, part = "purpose") =>
   call(from, TOKEN, "ft_transfer_call",
     { receiver_id: POTS, amount: String(amount), msg: JSON.stringify({ pot_id: pot, part }) },
     { deposit: 1n, gas: 150n * TGAS, failOn: [POTS] });
+
+/** Makes sure a giver holds enough test dollars before giving. */
+async function topUp(id, need) {
+  const bal = BigInt(await view(TOKEN, "ft_balance_of", { account_id: id }));
+  if (bal >= need) return;
+  await must(`${id} gets test dollars`, call(id, TOKEN, "get_test_dollars", {}));
+}
+await topUp(sub("mum"), 250n * D);
+await topUp(sub("uncle-femi"), 100n * D);
+for (let i = 1; i <= 5; i++) await topUp(sub(`resident${i}`), 140n * D);
 
 const fam = (await must("Family showcase pot created", call(sub("mum"), POTS, "create_pot", {
   kind: "Personal", title: "Tolu's 2026/27 fees", payees: [sub("llu")], reference: "LLU/2024/0193",

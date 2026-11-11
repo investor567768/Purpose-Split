@@ -758,3 +758,55 @@ body.menu-on { overflow: hidden; }
 /* v0.7.1: the menu is just five numbered words. */
 .menu__list a, .menu__list a:any-link { grid-template-columns: 2.2rem 1fr; }
 @media (max-width: 620px) { .menu__list a { grid-template-columns: 2rem 1fr; } }
+
+/* v0.8: the pass, and the "what happens next" guide. */
+
+/* A pass: a stamped ticket with a torn edge between its head and its body. */
+.pass {
+  position: relative;
+  background: var(--slip);
+  padding: 22px 26px 22px;
+  border-top: 6px solid var(--print);
+  box-shadow: 6px 6px 0 var(--counter-deep);
+  max-width: 520px;
+}
+.pass__top {
+  display: flex; justify-content: space-between; gap: 12px;
+  font-size: var(--fs-small); font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--print-soft);
+  padding-bottom: 14px; margin-bottom: 16px;
+  border-bottom: 3px dotted rgba(31, 92, 76, 0.55);
+}
+.pass__top::before, .pass__top::after {
+  content: ""; position: absolute; top: 44px; width: 22px; height: 22px; border-radius: 50%; background: var(--counter);
+}
+.pass__top::before { left: -11px; }
+.pass__top::after { right: -11px; }
+.pass__what { font-size: clamp(1.7rem, 1.2rem + 2vw, 2.4rem); line-height: 1.05; margin: 0; color: var(--print); }
+.pass__to { font-size: 1.2rem; font-weight: 650; margin: 6px 0 14px; color: var(--body); }
+.pass .status-line { margin-top: 16px; align-items: center; }
+.pass .status-line p { margin: 0; flex: 1 1 200px; }
+.pass__links { display: flex; flex-wrap: wrap; gap: 6px 18px; margin: 14px 0 0; font-size: var(--fs-small); }
+.pass-list { display: grid; gap: 32px; }
+.pass-form { margin: 0; }
+.pass-form input { width: 100%; }
+
+/* What happens next: four numbered steps, the current one marked. */
+.nextup { margin: 22px 0 6px; max-width: 760px; }
+.nextup ol { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.nextup li {
+  display: flex; align-items: center; gap: 8px; padding: 10px 12px;
+  background: var(--slip); color: var(--print-soft); font-weight: 650; font-size: var(--fs-small); line-height: 1.25;
+  border-top: 4px solid var(--counter-deep);
+}
+.nextup li span {
+  flex: none; width: 24px; height: 24px; display: grid; place-items: center;
+  font-size: 0.8rem; font-weight: 800; color: var(--print-soft); box-shadow: inset 0 0 0 2px var(--print-soft);
+}
+.nextup li.done { color: var(--print); border-top-color: var(--print); }
+.nextup li.done span { background: var(--print); color: var(--slip); box-shadow: none; font-size: 0; }
+.nextup li.done span::before { content: "✓"; font-size: 0.85rem; }
+.nextup li[aria-current="step"] { color: var(--violet); border-top-color: var(--violet); }
+.nextup li[aria-current="step"] span { background: var(--violet); color: var(--slip); box-shadow: none; }
+.nextup p { margin: 12px 0 0; font-weight: 600; color: var(--body); }
+@media (max-width: 700px) { .nextup ol { grid-template-columns: 1fr 1fr; } }
+.proof-steps .noted { display: block; font-weight: 400; color: var(--print-soft); margin-top: 4px; }
