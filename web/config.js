@@ -12,6 +12,8 @@ export const GITHUB = ""; // filled in once the repository is public
 export const STORY = { family: 0, street: 1, appeal: 2 };
 // Open pots kept funded for 30 days, so anyone can try to cheat them live.
 export const LIVE = { family: 3, street: 4, appeal: 5 };
+// The "split" box: one school year paid to the school, a bookshop and a hostel, plus pocket money.
+export const SPLIT = 7;
 
 const s = (name) => `${name}.${ROOT}`;
 
@@ -32,6 +34,8 @@ export const PEOPLE = {
   [s("sparks")]: "Sparks Electrical",
   [s("lagoonheights")]: "Lagoon Heights Hospital",
   [s("cornercare")]: "Corner Care Pharmacy",
+  [s("campusbooks")]: "Campus Books",
+  [s("lagoonhostel")]: "Lagoon Hostel",
   [s("emeka")]: "Emeka, who runs the appeal",
   [s("ngozi-family")]: "Mama Ngozi's family",
   [s("resident1")]: "Mrs Okafor, no. 3",
@@ -61,7 +65,7 @@ export const SAY = {
   [s("ngozi-family")]: "the patient's family",
 };
 
-// The choices offered in "Try it yourself".
+// The choices offered in "Try to cheat".
 export const CHEATS = {
   family: {
     pot: LIVE.family,

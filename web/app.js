@@ -2,7 +2,7 @@
 // browser. "Try to cheat" asks the contract's own `why_refused` check, so the
 // answers on screen are the contract's words, not ours.
 
-import { CHEATS, EXPLORER, LIVE, PEOPLE, POTS, RPCS, SAY, STORY, TOKEN, GITHUB } from "./config.js";
+import { CHEATS, EXPLORER, LIVE, PEOPLE, POTS, RPCS, ROOT, SAY, STORY, SPLIT, TOKEN, GITHUB } from "./config.js";
 import {
   canPlay, closeBox, confirmPayment, createBox, currentAccount, explain, getTestDollars, give,
   loadWallet, onAccountChange, payBill, playPayee, sendBill, signIn, signOut,
@@ -89,6 +89,7 @@ function markNav(name) {
 }
 
 /** A payee's display name. */
+const cap = (t) => t.charAt(0).toUpperCase() + t.slice(1);
 const payeeName = (x) => (x && (x.name || nameOf(x.account_id))) || "the payee";
 
 /** "A", "A or B", "A, B or C". */
@@ -110,7 +111,7 @@ function evidenceLine(x) {
 
 // ------------------------------------------------------------------ try to cheat
 
-// Short ideas for "Try to break the rules", one list per money box. Roles, not names.
+// Short ideas for "Try to cheat", one list per money box. Roles, not names.
 const IDEAS = {
   family: [
     "The student sends the fees to a betting site.",
@@ -137,10 +138,11 @@ function cheatSlip(storyKey = "family", { heading = "h2", tabs = true } = {}) {
   return `
   <form class="slip" id="${id}" data-story="${storyKey}" aria-describedby="${id}-hint">
     <div class="slip__head">
-      <${heading}>Try to break the rules</${heading}>
+      <${heading}>Try to cheat</${heading}>
       <span class="slip__no" data-potno></span>
     </div>
-    <p class="small" id="${id}-hint">Pick a person and what they try. The real contract answers yes or no. Nothing is actually sent.</p>
+    <p class="live-stamp"><span>Live on NEAR</span> Nothing here is simulated. Each answer comes from the real contract.</p>
+    <p class="small" id="${id}-hint">Pick a person and what they try. Asking is free, and no money moves.</p>
     ${tabs ? `<div class="switch" role="group" aria-label="Which money box">
       <button type="button" data-story-btn="family">School fees</button>
       <button type="button" data-story-btn="street">Street fund</button>
@@ -294,7 +296,7 @@ function home() {
     <h1>Parents send school fees. The money can only pay the school.</h1>
     <p class="lead">The family puts the fees into one money box. The student pays the school from it, and it can't go anywhere else. Everyone sees when the school has it, and whatever isn't used comes back.</p>
     <p class="cta">
-      <a class="button" href="#try-h">Try to break the rules</a>
+      <a class="button" href="#try-h">Try to cheat</a>
       <a class="button button--quiet" href="#/try">How to try it</a>
     </p>
   </section>
@@ -332,6 +334,23 @@ function home() {
     </div>
   </section>
 
+  <section class="section" aria-labelledby="split-h">
+    <h2 id="split-h">One box for the whole school year</h2>
+    <p class="lead">Fees, books and hostel rent are paid to different places. One money box can hold all of it, and each payee can only bill for its own part. A labelled part goes straight to the student as pocket money.</p>
+    <div class="pot-grid">
+      <article class="slip">
+        <div class="slip__head"><h3>Where the money went</h3><span class="slip__no"><a href="#/pot/${SPLIT}">Money box no. ${SPLIT}</a></span></div>
+        <div data-split><p class="loading">Reading it from NEAR testnet…</p></div>
+      </article>
+      <aside class="prose">
+        <h3>Each payee bills for itself</h3>
+        <p>The school sends a bill for the fees, the bookshop for the books, the hostel for the rent. The student pays each bill, and each payee confirms it on-chain.</p>
+        <p>The bookshop can't be paid more than it billed, and nobody outside the box's list can be paid at all.</p>
+        <p><a href="#/pot/${SPLIT}">Open the box and its receipts</a></p>
+      </aside>
+    </div>
+  </section>
+
   <section class="section" aria-labelledby="back-h">
     <h2 id="back-h">What if it doesn't work out?</h2>
     <p class="lead">Nobody's money gets stuck. It goes back on its own, to each person in proportion to what they gave.</p>
@@ -346,8 +365,8 @@ function home() {
     <h2 id="any-h">Works for any purpose</h2>
     <p class="lead">School fees are one example. Any money with a named payee can have rules.</p>
     <ul class="uses">
-      <li><a href="#/street"><span class="uses__n">01</span><h3>Street fund</h3><p>Neighbours chip in. Only their vote can pay the electrician.</p><span class="uses__go">See how</span></a></li>
-      <li><a href="#/appeal"><span class="uses__n">02</span><h3>Appeals</h3><p>Strangers give to a surgery. The money can only pay the hospital.</p><span class="uses__go">See how</span></a></li>
+      <li><a href="#/pot/${LIVE.street}"><span class="uses__n">01</span><h3>Street fund</h3><p>Neighbours chip in. Only their vote can pay the electrician.</p><span class="uses__go">See the box</span></a></li>
+      <li><a href="#/pot/${LIVE.appeal}"><span class="uses__n">02</span><h3>Give to a cause, not to a person.</h3><p>Strangers give to a surgery. The money can only pay the hospital and the pharmacy.</p><span class="uses__go">See the appeal</span></a></li>
       <li><a href="#/start"><span class="uses__n">03</span><h3>Your own</h3><p>Rent, a wedding, a group purchase. Pick who can be paid.</p><span class="uses__go">Start one</span></a></li>
     </ul>
   </section>
@@ -358,57 +377,14 @@ function home() {
   </section>`;
 
   wireCheat(main.querySelector("form.slip"));
+  view(POTS, "get_pot", { pot_id: SPLIT })
+    .then(({ value: p }) => { if (p) main.querySelector("[data-split]").innerHTML = whereItWent(p, { compact: true }); })
+    .catch(() => (main.querySelector("[data-split]").innerHTML = `<p class="error">Couldn't reach NEAR testnet just now.</p>`));
   view(POTS, "get_pot", { pot_id: LIVE.family })
     .then(({ value: p }) => {
       if (p && p.payees[0]) main.querySelector("[data-evidence]").innerHTML = evidenceLine(p.payees[0]);
     })
     .catch(() => {});
-}
-
-function streetPage() {
-  setTitle("Street fund");
-  markNav("street");
-  main.innerHTML = `
-  <section class="page-head">
-    <p class="kicker">Example 01</p>
-    <h1>A street fund only the vote can spend</h1>
-    <p class="lead">A street's transformer is broken. Five neighbours each put 40 into one money box. The electrician asks for 100 to buy parts, the neighbours vote, and only then does the box pay him. The chairman can't take the money, even if a vote says so.</p>
-  </section>
-  <div class="pot-grid">
-    ${cheatSlip("street", { heading: "h2", tabs: false })}
-    <aside class="slip slip--yellow">
-      <div class="slip__head"><h2>The rules on this box</h2></div>
-      ${field("Who adds money", "Five neighbours, 40 each")}
-      ${field("Who can be paid", "Only Sparks Electrical, against its own request")}
-      ${field("Who decides", "The neighbours, by a DAO vote")}
-      ${field("If it falls short", "Nobody is paid. Everyone gets everything back.")}
-      <p><a href="#/pot/${STORY.street}">See the finished street fund</a></p>
-    </aside>
-  </div>`;
-  wireCheat(main.querySelector("form.slip"));
-}
-
-function appealPage() {
-  setTitle("Appeals");
-  markNav("appeal");
-  main.innerHTML = `
-  <section class="page-head">
-    <p class="kicker">Example 02</p>
-    <h1>Give to a cause, not to a person</h1>
-    <p class="lead">Someone shares a link: their mother needs surgery. Strangers give. The money can only go to the hospital and the pharmacy, against their own bills. A small amount for food and transport goes to the family, and everyone sees that split before they give. Whatever isn't used goes back to the givers.</p>
-  </section>
-  <div class="pot-grid">
-    ${cheatSlip("appeal", { heading: "h2", tabs: false })}
-    <aside class="slip slip--yellow">
-      <div class="slip__head"><h2>The rules on this box</h2></div>
-      ${field("Who gives", "Anyone with the link")}
-      ${field("Who can be paid", "Only the hospital or the pharmacy, against their own bills")}
-      ${field("Food and transport", "A fixed 80, sent straight to the family, stated up front")}
-      ${field("What's left", "Back to each giver, in proportion")}
-      <p><a href="#/pot/${STORY.appeal}">See a finished appeal and its receipts</a></p>
-    </aside>
-  </div>`;
-  wireCheat(main.querySelector("form.slip"));
 }
 
 function templateList() {
@@ -589,7 +565,7 @@ async function receiptPage(potId, index) {
   }
   const req = p.requests[pay.request_id];
   const payee = payeeOf(p, pay.to);
-  const text = `${p.title}: ${money(pay.amount)} paid to ${payee}${pay.confirmed ? ", confirmed by them" : ""}. Check the receipt: ${location.href}`;
+  const text = `${p.title}: ${money(pay.amount)} paid to ${payee}${pay.confirmed ? `, and ${payee} confirmed they received it` : ""}. The money could not go anywhere else. Check it yourself: ${location.href}`;
   main.innerHTML = `
   <section class="page-head">
     <h1>Receipt</h1>
@@ -608,37 +584,27 @@ async function receiptPage(potId, index) {
       <p class="small">${pay.confirmed ? `${esc(payee)} confirmed on-chain that this payment reached it.` : `${esc(payee)} has not confirmed this payment yet.`}</p>
     </div>
     <p class="cta">
-      <a class="button" href="https://wa.me/?text=${encodeURIComponent(text)}" target="_blank" rel="noopener">Share on WhatsApp</a>
+      <a class="button" href="https://wa.me/?text=${encodeURIComponent(text)}" target="_blank" rel="noopener">Send the proof to the family</a>
       <a class="button button--quiet" href="#/pot/${p.id}">See the whole money box</a>
     </p>
   </article>`;
 }
 
-function cheatPage(query) {
-  setTitle("Try to break the rules");
-  markNav("cheat");
-  const story = ["street", "appeal"].includes(query.get("story")) ? query.get("story") : "family";
-  main.innerHTML = `
-  <section class="page-head">
-    <h1>Try to break the rules</h1>
-    <p class="lead">Three money boxes are open and funded on NEAR testnet. Pick one, choose who is sending and where the money goes, and the real contract tells you yes or no.</p>
-  </section>
-  <div class="pot-grid">
-    ${cheatSlip(story, { heading: "h2" })}
-    <aside class="prose">
-      <h3>How it answers</h3>
-      <p>Each answer comes from the money box contract on NEAR testnet, through its own check. Nothing is sent and no wallet is needed.</p>
-      <p>Every one of these attempts was also tried with real transactions in the test run. <a href="#/proof">See them on the proof page</a>.</p>
-    </aside>
-  </div>`;
-  wireCheat(main.querySelector("form.slip"));
-}
+// Our three examples, shown first on the Money boxes page.
+const EXAMPLES = [
+  { id: SPLIT, story: null, kicker: "School year", title: "Tolu's whole school year", blurb: "One box pays the school, a bookshop and a hostel, each only against its own bill, plus pocket money." },
+  { id: LIVE.street, story: "street", kicker: "Street fund", title: "The street's transformer", blurb: "Neighbours chip in. Only their vote can pay the electrician, and never the chairman." },
+  { id: LIVE.appeal, story: "appeal", kicker: "Give to a cause, not to a person", title: "A surgery appeal", blurb: "Anyone can give. Only the hospital and the pharmacy can be paid." },
+];
+const exampleFor = (id) => EXAMPLES.find((e) => e.id === Number(id));
 
-function potCard(p) {
+function potCard(p, ex) {
   const kind = p.kind === "Group" ? "Decided by a vote" : "One person presses pay";
   return `
   <a class="slip pot-card ${p.kind === "Group" ? "slip--yellow" : ""}" href="#/pot/${p.id}" style="text-decoration:none;color:inherit">
+    ${ex ? `<p class="kicker">${esc(ex.kicker)}</p>` : ""}
     <div class="slip__head"><h3>${esc(p.title)}</h3><span class="slip__no">No. ${p.id}</span></div>
+    ${ex ? `<p>${esc(ex.blurb)}</p>` : ""}
     ${field("Pays only", esc(either(p.payees.map(payeeName))))}
     ${field("Raised", `${money(p.raised)} of ${money(p.target)}`)}
     ${field(kind, p.status === "Open" ? (p.deadline_passed ? "Deadline passed, waiting to be closed" : `Open until ${when(p.deadline_ns)}`) : "Closed, and the rest went back")}
@@ -651,17 +617,71 @@ async function potsPage() {
   main.innerHTML = `
   <section class="page-head">
     <h1>Money boxes</h1>
-    <p class="lead">Every money box in the contract, read live from NEAR testnet. Open ones can still take money; closed ones have paid out and returned the rest.</p>
+    <p class="lead">Every money box lives on NEAR testnet and is read live. Start with our three examples, and try to cheat them. Boxes that people start show up underneath.</p>
   </section>
-  <div class="pot-list" data-list><p class="loading">Reading the contract…</p></div>`;
+  <section aria-labelledby="ex-h">
+    <h2 id="ex-h" class="kicker">Our examples</h2>
+    <div class="pot-list" data-examples><p class="loading">Reading the contract…</p></div>
+  </section>
+  <section class="section" aria-labelledby="yours-h">
+    <h2 id="yours-h">Boxes people made</h2>
+    <div class="pot-list" data-yours><p class="loading">Reading the contract…</p></div>
+    <p><a class="button" href="#/start">Start a money box</a></p>
+  </section>
+  <details class="older" data-older-wrap hidden>
+    <summary>Older practice boxes from our test run <span data-older-n></span></summary>
+    <div class="pot-list" data-older></div>
+  </details>`;
   try {
-    const { value: pots } = await view(POTS, "get_pots", { from_index: 0, limit: 50 });
-    const list = main.querySelector("[data-list]");
-    list.innerHTML = pots.length ? pots.slice().reverse().map(potCard).join("") : `<p>No money boxes yet.</p>`;
+    const { value: pots } = await view(POTS, "get_pots", { from_index: 0, limit: 100 });
+    const ours = (id) => id.endsWith(`.${ROOT}`);
+    const exIds = EXAMPLES.map((e) => e.id);
+    main.querySelector("[data-examples]").innerHTML = EXAMPLES
+      .map((e) => pots.find((p) => p.id === e.id))
+      .filter(Boolean)
+      .map((p) => potCard(p, exampleFor(p.id)))
+      .join("");
+    const yours = pots.filter((p) => !ours(p.creator)).reverse();
+    main.querySelector("[data-yours]").innerHTML = yours.length
+      ? yours.map((p) => potCard(p)).join("")
+      : `<p>None yet. Be the first: it takes a minute on testnet.</p>`;
+    const older = pots.filter((p) => ours(p.creator) && !exIds.includes(p.id));
+    if (older.length) {
+      main.querySelector("[data-older-wrap]").hidden = false;
+      main.querySelector("[data-older-n]").textContent = `(${older.length})`;
+      main.querySelector("[data-older]").innerHTML = older.map((p) => potCard(p)).join("");
+    }
   } catch {
-    main.querySelector("[data-list]").innerHTML = `<p class="error">Couldn't reach NEAR testnet just now. Reload the page to try again.</p>`;
+    main.querySelector("[data-examples]").innerHTML = `<p class="error">Couldn't reach NEAR testnet just now. Reload the page to try again.</p>`;
+    main.querySelector("[data-yours]").innerHTML = "";
   }
 }
+
+/** Where every unit that came into a box went: each payee, the free part, returned, still held. */
+function whereItWent(p, { compact = false } = {}) {
+  const byPayee = new Map(p.payees.map((x) => [x.account_id, 0n]));
+  for (const x of p.payments) byPayee.set(x.to, (byPayee.get(x.to) || 0n) + BigInt(x.amount));
+  const parts = [];
+  let i = 0;
+  for (const x of p.payees) parts.push({ cls: `to${(i++ % 3) + 1}`, label: `To ${payeeName(x)}`, v: byPayee.get(x.account_id) || 0n });
+  if (BigInt(p.free_sent) > 0n) parts.push({ cls: "free", label: `${p.free_label}, to ${nameOf(p.free_to)}`, v: BigInt(p.free_sent) });
+  parts.push({ cls: "back", label: "Returned to the givers", v: BigInt(p.refunded) });
+  parts.push({ cls: "held", label: "Still in the box", v: BigInt(p.held) });
+  const total = parts.reduce((a, x) => a + x.v, 0n) || 1n;
+  const shown = parts.filter((x) => x.v > 0n);
+  const pc = (v) => Number((v * 10000n) / total) / 100;
+  return `<div class="went ${compact ? "went--compact" : ""}">
+    <div class="went__bar" role="img" aria-label="${esc(shown.map((x) => `${x.label}: ${money(x.v)}`).join("; "))}">
+      ${shown.map((x) => `<span class="${x.cls}" style="width:${pc(x.v)}%"></span>`).join("")}
+    </div>
+    <ul class="went__key">
+      ${shown.map((x) => `<li class="${x.cls}"><span>${esc(x.label)}</span><strong>${money(x.v)}</strong></li>`).join("")}
+    </ul>
+  </div>`;
+}
+
+/** What each giver would get back if the box closed now: their share of what is still held. */
+const backNow = (p, amount) => (BigInt(p.raised) > 0n ? ((BigInt(p.held) * BigInt(amount)) / BigInt(p.raised) / 10000n) * 10000n : 0n);
 
 async function potPage(id) {
   setTitle(`Money box no. ${id}`);
@@ -681,21 +701,26 @@ async function potPage(id) {
   const group = p.kind === "Group";
   const only = either(p.payees.map(payeeName));
   const hasFree = BigInt(p.free_target) > 0n;
-  const shareText = `${p.title}. The money can only go to ${only}${hasFree ? `, plus ${money(p.free_target)} for ${p.free_label.toLowerCase()} sent to ${nameOf(p.free_to)}` : ""}. Whatever isn't used goes back to the givers. See it live: ${location.href}`;
+  const shareText = `${p.id === LIVE.appeal ? "Give to a cause, not to a person. " : ""}${p.title}. The money can only go to ${only}${hasFree ? `, plus ${money(p.free_target)} for ${p.free_label.toLowerCase()} sent to ${nameOf(p.free_to)}` : ""}. Whatever isn't used goes back to the givers. See it live: ${location.href}`;
   const target = BigInt(p.target) || 1n;
   const pct = (v) => `${Number((BigInt(v) * 10000n) / target) / 100}%`;
+  const showBack = p.status === "Open" && BigInt(p.held) > 0n;
+  const cheatKey = p.status === "Open" && !p.deadline_passed ? Object.keys(LIVE).find((k) => LIVE[k] === p.id) : null;
   const status = p.status === "Open"
     ? p.deadline_passed ? "The deadline has passed. Anyone can close the box to send the rest back." : `Open until ${when(p.deadline_ns)}`
     : "Closed. What was left went back to the people who gave it.";
 
+  const ex = exampleFor(p.id);
   main.innerHTML = `
   <section class="page-head">
+    ${ex ? `<p class="kicker">${esc(ex.kicker)}</p>` : ""}
     <h1>${esc(p.title)}</h1>
-    <p class="lead">This money can only go to ${esc(only)}, against their own bills. ${group ? "A vote decides each payment." : `${esc(SAY[p.releaser] || nameOf(p.releaser))} presses pay.`} Whatever isn't used goes back to the givers.</p>
+    <p class="lead">This money can only go to ${esc(only)}, against their own bills. ${group ? "A vote decides each payment." : `${esc(cap(SAY[p.releaser] || nameOf(p.releaser)))} presses pay.`} Whatever isn't used goes back to the givers.</p>
     <div class="split">
       <p><strong>${money(p.target)}</strong> can only go to ${esc(only)}.</p>
       ${hasFree ? `<p><strong>${money(p.free_target)}</strong> more is “${esc(p.free_label)}”, sent straight to ${esc(nameOf(p.free_to))}.</p>` : ""}
     </div>
+    ${p.payments.length || BigInt(p.free_sent) > 0n || BigInt(p.refunded) > 0n ? `<h2 class="went__h">Where the money went</h2>${whereItWent(p)}` : ""}
     <p class="cta">
       <a class="button" href="https://wa.me/?text=${encodeURIComponent(shareText)}" target="_blank" rel="noopener">Share on WhatsApp</a>
       <button class="button button--quiet" type="button" data-copy>Copy the link</button>
@@ -729,9 +754,10 @@ async function potPage(id) {
     <div style="display:grid;gap:32px">
       <section class="slip" aria-labelledby="who-gave">
         <div class="slip__head"><h2 id="who-gave">Who gave</h2><span class="slip__no">${p.contributions.length} ${p.contributions.length === 1 ? "person" : "people"}</span></div>
-        ${p.contributions.length ? `<table class="rows"><thead><tr><th>Person</th><th class="num">Amount</th></tr></thead><tbody>
-          ${p.contributions.map((c) => `<tr><td>${esc(nameOf(c.account_id))}<br><span class="small">${acct(c.account_id)}</span></td><td class="num">${money(c.amount)}</td></tr>`).join("")}
-        </tbody></table>` : `<p>Nobody has added money yet.</p>`}
+        ${p.contributions.length ? `<table class="rows"><thead><tr><th>Person</th><th class="num">Gave</th>${showBack ? `<th class="num">Back if it closed now</th>` : ""}</tr></thead><tbody>
+          ${p.contributions.map((c) => `<tr><td>${esc(nameOf(c.account_id))}<br><span class="small">${acct(c.account_id)}</span></td><td class="num">${money(c.amount)}</td>${showBack ? `<td class="num">${money(backNow(p, c.amount))}</td>` : ""}</tr>`).join("")}
+        </tbody></table>
+        ${showBack ? `<p class="small">Whatever is still in the box goes back to each giver in proportion to what they gave. The contract works this out; nobody chooses who gets what.</p>` : ""}` : `<p>Nobody has added money yet.</p>`}
       </section>
       <section class="slip" aria-labelledby="bills">
         <div class="slip__head"><h2 id="bills">Bills</h2><span class="slip__no">${p.requests.length}</span></div>
@@ -749,10 +775,10 @@ async function potPage(id) {
         <div class="slip__head"><h2 id="act-h">What you can do here</h2></div>
         <p class="loading">Checking…</p>
       </section>
-      ${p.status === "Open" && !p.deadline_passed && Object.values(LIVE).includes(p.id)
-        ? `<p><a class="button" href="#/cheat?story=${Object.keys(LIVE).find((k) => LIVE[k] === p.id)}">Try to break this one</a></p>` : ""}
     </div>
-  </div>`;
+  </div>
+  ${cheatKey ? `<section class="section" aria-label="Try to cheat this box"><div class="pot-grid">${cheatSlip(cheatKey, { heading: "h2", tabs: false })}<aside class="prose"><h3>Try to cheat this box</h3><p>Pick who is trying and where they send the money. The real contract on NEAR answers, with its reason. Nothing is sent and no wallet is needed.</p></aside></div></section>` : ""}`;
+  if (cheatKey) wireCheat(main.querySelector("form.slip"));
   renderActions(p);
   const copy = main.querySelector("[data-copy]");
   copy.addEventListener("click", async () => {
@@ -926,7 +952,7 @@ function tryPage() {
     <ul class="uses">
       <li><a href="#/pot/${LIVE.family}"><span class="uses__n">A</span><h3>Give to a box</h3><p>Put test dollars into the open school-fees box.</p><span class="uses__go">Open it</span></a></li>
       <li><a href="#/start"><span class="uses__n">B</span><h3>Start your own</h3><p>Name the school, choose who presses pay, set a deadline.</p><span class="uses__go">Start one</span></a></li>
-      <li><a href="#/cheat"><span class="uses__n">C</span><h3>Break the rules</h3><p>No wallet needed. Ask the contract and see it refuse.</p><span class="uses__go">Try it</span></a></li>
+      <li><a href="#/pots"><span class="uses__n">C</span><h3>Try to cheat</h3><p>No wallet needed. Open an example and see the real contract refuse.</p><span class="uses__go">Pick one</span></a></li>
     </ul>
   </section>`;
 
@@ -1063,14 +1089,17 @@ function route() {
   const query = new URLSearchParams(qs || "");
   const parts = path.split("/").filter(Boolean);
   window.scrollTo(0, 0);
-  if (parts[0] === "cheat") return cheatPage(query);
+  // Old addresses from earlier versions still work.
+  const moved = { cheat: `#/pot/${LIVE[query.get("story")] ?? ""}`, street: `#/pot/${LIVE.street}`, appeal: `#/pot/${LIVE.appeal}` };
+  if (moved[parts[0]]) {
+    location.replace(parts[0] === "cheat" && !LIVE[query.get("story")] ? "#/pots" : moved[parts[0]]);
+    return;
+  }
   if (parts[0] === "pots") return potsPage();
   if (parts[0] === "pot" && /^\d+$/.test(parts[1] || "")) return potPage(parts[1]);
   if (parts[0] === "proof") return proofPage();
   if (parts[0] === "start") return startPage();
-  if (parts[0] === "street") return streetPage();
   if (parts[0] === "try") return tryPage();
-  if (parts[0] === "appeal") return appealPage();
   if (parts[0] === "receipt" && /^\d+$/.test(parts[1] || "") && /^\d+$/.test(parts[2] || "")) return receiptPage(parts[1], parts[2]);
   return home();
 }

@@ -10,7 +10,7 @@ Tracks: Social Money and Real-World Money.
 
 ## The problem
 
-When you send money for a purpose, you lose control of it the moment it lands. You can only hope.
+Nigerians abroad sent home about **$22.8 billion in 2025**, according to World Bank data ([Intelpoint](https://intelpoint.co/insights/personal-remittance-inflows-to-nigeria-increased-3-0-year-on-year-from-22-1-billion-in-2024-to-22-8-billion-in-2025/)). Families often send it for something specific: school fees, rent, a hospital bill. But when you send money for a purpose, you lose control of it the moment it lands. You can only hope.
 
 That gets worse when several people give. Relatives, some abroad, chip in for a student's school fees, and it all sits in one person's account. Neighbours collect for a broken transformer, and the money sits with the chairman. Strangers give to a surgery appeal on WhatsApp, and nobody can tell whether it reaches the hospital.
 
@@ -21,7 +21,7 @@ That gets worse when several people give. Relatives, some abroad, chip in for a 
 3. **Pay.** The person or group named on the box pays the bill. The money can't go anywhere else: not to the person pressing pay, not to a lookalike account, not to a different payee.
 4. **Return.** After the deadline, whatever is left goes back to each giver, in proportion to what they gave.
 
-An optional, labelled free part covers costs nobody can bill, such as food and transport, and is shown to givers before they give.
+One box can pay up to three payees, each only against its own bills: a student's school year can pay the school for fees, a bookshop for books and a hostel for rent. An optional, labelled free part covers costs nobody can bill, such as pocket money or food and transport, and is shown to givers before they give.
 
 ## For example
 
@@ -38,7 +38,7 @@ These are examples. The same rules work for any purpose with a named payee: rent
 
 - The money box contract and the test-dollar token are written, with 69 tests covering every rule and every cheating attempt.
 - Three demo stories ran on testnet: 53 steps, all 16 cheating attempts refused, and the books balance. See `proof/demo-dev.json` for every transaction link.
-- The website is live, with wallet sign-in, "Try to break the rules", and a form to start your own money box.
+- The website is live, with wallet sign-in, "Try to cheat" against the real contract, three example money boxes and a form to start your own.
 - Next: the two Sputnik DAOs and the final, locked deployment.
 
 ## Try it from the command line
