@@ -887,6 +887,22 @@ impl Contract {
             .unwrap_or_default()
     }
 
+    /// The access check: does `account_id` hold a pass for a confirmed payment to
+    /// `payee`? Another system (an exam portal, a hostel gate, a clinic) calls this
+    /// and gets a plain yes or no straight from the contract, with no website and no
+    /// person reading a screen. Passes can't be moved, so the answer can't be borrowed.
+    pub fn has_paid(&self, account_id: AccountId, payee: AccountId) -> bool {
+        self.passes_of
+            .get(&account_id)
+            .map(|list| {
+                list.iter()
+                    .filter_map(|n| self.passes.get(*n))
+                    .filter_map(|(pot, payment)| self.pass(*pot, *payment))
+                    .any(|pass| pass.payee == payee)
+            })
+            .unwrap_or(false)
+    }
+
     /// The pass for one payment of one pot, if the payee has confirmed it.
     pub fn get_pass(&self, pot_id: u64, payment_index: u32) -> Option<PassView> {
         self.pass(u32::try_from(pot_id).ok()?, payment_index)

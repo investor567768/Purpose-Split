@@ -84,6 +84,25 @@ export const proposePayee = (payee, bond) =>
     },
   }, { gas: 100, deposit: bond });
 
+/** Anyone can ask the council to take a payee off the verified list. Same bond as adding one. */
+export const proposeRemoval = (accountId, name, bond) =>
+  send(COUNCIL_DAO, "add_proposal", {
+    proposal: {
+      description: `Remove ${name} (${accountId}) from the verified list.`,
+      kind: {
+        FunctionCall: {
+          receiver_id: POTS,
+          actions: [{
+            method_name: "remove_payee",
+            args: btoa(JSON.stringify({ account_id: accountId })),
+            deposit: "0",
+            gas: "150000000000000",
+          }],
+        },
+      },
+    },
+  }, { gas: 100, deposit: bond });
+
 /** A councillor's vote. The vote that passes a proposal also carries it out, so it gets plenty of gas. */
 export const voteOnCouncil = (id, action, kind) =>
   send(COUNCIL_DAO, "act_proposal", { id, action, proposal: kind }, { gas: 300 });

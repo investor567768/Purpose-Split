@@ -2,10 +2,10 @@
 // browser. "Try to cheat" asks the contract's own `why_refused` check, so the
 // answers on screen are the contract's words, not ours.
 
-import { CHEATS, COUNCIL_DAO, STREET_DAO, EXPLORER, LIVE, PEOPLE, POTS, RPCS, ROOT, SAY, STORY, SPLIT, TOKEN, GITHUB } from "./config.js";
+import { CHEATS, COUNCIL_DAO, STREET_DAO, INTENTS_BOX, EXPLORER, LIVE, PEOPLE, POTS, RPCS, ROOT, SAY, STORY, SPLIT, TOKEN, GITHUB } from "./config.js";
 import {
   canPlay, closeBox, confirmPayment, createBox, currentAccount, explain, getTestDollars, give,
-  loadWallet, onAccountChange, payBill, playPayee, proposePayee, sendBill, signIn, signOut, voteOnCouncil,
+  loadWallet, onAccountChange, payBill, playPayee, proposePayee, proposeRemoval, sendBill, signIn, signOut, voteOnCouncil,
 } from "./act.js";
 
 const main = document.getElementById("main");
@@ -165,9 +165,9 @@ function cheatSlip(storyKey = "family", { heading = "h2", tabs = true, whose = "
       <span class="slip__no" data-potno></span>
     </div>
     ${whose === "demo"
-      ? `<p class="live-stamp"><span>Demo box, real rules</span> The people here are made up, and no money moves. But each answer comes from the real contract on NEAR, the same check it runs before every real payment.</p>`
+      ? `<p class="live-stamp"><span>Demo box, real rules</span> The people are made up. The answer is real: it comes from the contract on NEAR, which runs this same check before every payment. Nothing is sent.</p>`
       : `<p class="live-stamp"><span>${whose === "yours" ? "Your box" : "This box"}, real rules</span> No money moves when you try. Each answer comes from the real contract on NEAR, the same check it runs before every real payment.</p>`}
-    <p class="small" id="${id}-hint">Pick a person and what they try. Asking is free.</p>
+    <p class="small" id="${id}-hint">Pick who tries, what they try, and where the money goes. Then press Try it.</p>
     ${tabs ? `<div class="switch" role="group" aria-label="Which money box">
       <button type="button" data-story-btn="family">School fees</button>
       <button type="button" data-story-btn="street">Street fund</button>
@@ -194,18 +194,21 @@ function cheatSlip(storyKey = "family", { heading = "h2", tabs = true, whose = "
 function cheatFor(p, me) {
   const s = (n) => `${n}.${ROOT}`;
   const group = p.kind === "Group";
-  const you = (id, text) => (id === me ? `You, ${text}` : cap(text));
-  const signers = [{ id: p.releaser, label: group ? "The group, after its vote passed" : you(p.releaser, "the one who presses pay"), next: "" }];
-  if (p.creator !== p.releaser) signers.push({ id: p.creator, label: you(p.creator, "the one who started the box"), next: "" });
+  // Real roles from the box itself: "The student", "A parent", or "You" on your own box.
+  const short = (id) => cap(String(SAY[id] || nameOf(id)).split(",")[0]); // "Chrysolite, a councillor" -> "Chrysolite"
+  const role = (id) => (id === me ? "You" : short(id));
+  const whose = (id) => (id === me ? "Your own wallet" : `${short(id)}'s own wallet`);
+  const signers = [{ id: p.releaser, label: group ? "The group, after its vote passed" : `${role(p.releaser)} (pays the bills)`, next: "" }];
+  if (p.creator !== p.releaser) signers.push({ id: p.creator, label: `${role(p.creator)} (started the box)`, next: "" });
   if (me && me !== p.releaser && me !== p.creator) signers.push({ id: me, label: "You", next: "" });
   signers.push({ id: s("kunle"), label: "A stranger", next: "" });
 
-  const destinations = [{ id: p.releaser, label: group ? "The group's own account" : "The wallet of the one who presses pay" }];
-  if (p.creator !== p.releaser) destinations.push({ id: p.creator, label: "The wallet of the one who started the box" });
+  const destinations = [{ id: p.releaser, label: group ? "The group's own account" : whose(p.releaser) }];
+  if (p.creator !== p.releaser) destinations.push({ id: p.creator, label: whose(p.creator) });
   destinations.push({ id: s("sureodds"), label: "A betting site" }, { id: s("kunle"), label: "A friend who wants a loan" });
   const other = [s("marinapoly"), s("llu")].find((a) => !p.payees.some((x) => x.account_id === a));
-  if (other) destinations.push({ id: other, label: "A verified payee that is not on this box" });
-  p.payees.forEach((x) => destinations.push({ id: x.account_id, label: `${payeeName(x)}, a payee on this box` }));
+  if (other) destinations.push({ id: other, label: `${payeeName({ account_id: other })}, which this box doesn't pay` });
+  p.payees.forEach((x) => destinations.push({ id: x.account_id, label: `${payeeName(x)}, the payee on this box` }));
 
   const bill = p.requests.find((x) => x.status === "Open");
   const base = bill ? bill.amount : BigInt(p.held) > 0n ? p.held : p.target;
@@ -215,7 +218,7 @@ function cheatFor(p, me) {
     signers,
     destinations,
     ideas: [
-      "Send the money to the wallet of whoever presses pay.",
+      "Send the money to your own wallet.",
       "Send it to a betting site.",
       "Pay a payee an amount it never billed.",
       "Take the money back before the deadline.",
@@ -330,10 +333,10 @@ const QUESTIONS = [
   ["Is this real money?", "No. This runs on NEAR testnet with test dollars (tUSD) that are free and have no value, so you can try every step safely. A real launch would use USDC, a digital dollar that already exists on NEAR."],
   ["Why not just pay the school directly?", "If one parent pays one school, a bank transfer is fine. A money box helps when several people chip in, including relatives abroad. Everyone puts money into one place, everyone can see the school was paid, and whatever isn't used can be sent back to each of them, by anyone, without anyone's approval. Nobody has to trust the person holding the money."],
   ["Can the student send the money anywhere else?", "No. The money box pays only the school named on it, and only against a bill the school itself sent. Try it above: every other destination is refused."],
-  ["What is the pass?", `When the school confirms it was paid, the contract gives the student a "Fees paid" pass. Nobody can make one any other way, and it can't be sold or lent to a friend. Anyone can check it, for example before an exam or at the hostel gate. <a href="#/pass">Check a pass</a>.`],
+  ["What is the pass?", `When the school confirms it was paid, the contract gives the student a "Fees paid" pass. Nobody can make one any other way, and it can't be sold or lent to a friend. Anyone can check it, for example before an exam or at the hostel gate, and another system can ask the contract directly whether a student has paid a school, and get a yes or no. <a href="#/pass">Check a pass</a>.`],
   ["How do you know the account really belongs to the school?", "The contract can't know that by itself, so the list has to be trustworthy. A school is added only by a council vote, and only with a link to where the school itself publishes its account. You see that link before you send. If a school is ever removed, families can take their money back at once."],
   ["Can the people who built this take the money?", "The contract has no function that sends a box's money anywhere except its named payees, its stated free part, or back to the givers. This contract is not locked yet: we kept its key so we could fix a bug during the hackathon. Anyone can check that the code running now is exactly the open-source code, and a real launch would delete the key so nobody could change it."],
-  ["Why NEAR?", "Several things here work because it's NEAR. Accounts have names, like llu.purposesplit.testnet, so families can see who is being paid instead of a long code. The school list and the street's vote run on Sputnik DAO, NEAR's DAO system. A NEAR key can be limited to a few actions, which is how you can play the school on this site: its key can send bills and confirm payments, but can't move money. Passes are standard NEAR NFTs. And the money box is ready for NEAR Intents, so a relative abroad can give from another chain: the contract credits the gift and any refund to the real giver. Intents runs only on mainnet, so here it is shown with a stand-in."],
+  ["Why NEAR?", "Several things here work because it's NEAR. Accounts have names, like llu.purposesplit.testnet, so families can see who is being paid instead of a long code. The verified list of payees and the street's vote run on Sputnik DAO, NEAR's DAO system. A NEAR key can be limited to a few actions, which is how you can play the school on this site: its key can send bills and confirm payments, but can't move money. Passes are standard NEAR NFTs. And the money box is ready for NEAR Intents, so a relative abroad can give from another chain: the contract credits the gift and any refund to the real giver. Intents runs only on mainnet, so here it is shown with a stand-in. <a href=\"#/pot/7\">See a gift from abroad</a>."],
   ["What does it cost?", "We charge nothing. Each action is a NEAR transaction with a network fee well under a cent, and creating a money box needs a small one-time storage deposit in NEAR."],
   ["Can I check all this?", `Yes. Every step of the test run is on the public explorer, the books are checked live, and the contract is open source with a test for every rule. <a href="#/proof">Open the proof page</a>.`],
 ];
@@ -523,7 +526,7 @@ function nextSteps(p) {
   const openBill = p.requests.find((x) => x.status === "Open");
   const unconfirmed = p.payments.find((x) => !x.confirmed);
   const payees = either(p.payees.map(payeeName));
-  const payer = p.kind === "Group" ? "The group's vote" : cap(SAY[p.releaser] || nameOf(p.releaser));
+  const payer = p.kind === "Group" ? "The group's vote" : p.releaser === currentAccount() ? "You" : cap(SAY[p.releaser] || nameOf(p.releaser));
   let now, note;
   if (p.status !== "Open") { now = 4; note = "This box is closed. Whatever wasn't used went back to the people who gave."; }
   else if (BigInt(p.raised) === 0n) { now = 0; note = "Nobody has given yet. The box needs money before anything else can happen."; }
@@ -561,7 +564,7 @@ function startPage() {
         <div class="checks" data-payees><span class="small">Reading the verified list…</span></div></fieldset>
       <label class="field"><span class="field__label">A reference sent with every payment (optional)</span>
         <input name="reference" maxlength="40" placeholder="Matric number, patient number, job number"></label>
-      <fieldset class="field"><legend class="field__label">Who presses pay?</legend>
+      <fieldset class="field"><legend class="field__label">Who pays the bills from this box?</legend>
         <label class="radio"><input type="radio" name="who" value="me" checked> Me</label>
         <label class="radio"><input type="radio" name="who" value="person"> Someone else, for example the student</label>
         <label class="radio"><input type="radio" name="who" value="dao"> A group that votes (a Sputnik DAO)</label>
@@ -576,14 +579,6 @@ function startPage() {
           <option value="10080" selected>In 1 week</option>
           <option value="43200">In 30 days</option>
         </select></label>
-      <label class="radio"><input type="checkbox" name="aon"> If the target isn't reached, pay nothing and give everyone their money back</label>
-      <label class="radio"><input type="checkbox" name="free"> Add a free part, for costs nobody can bill</label>
-      <div data-free hidden>
-        <label class="field"><span class="field__label">Name it</span><input name="freeLabel" maxlength="40" value="Pocket money"></label>
-        <label class="field"><span class="field__label">Amount</span>
-          <span class="amount-row"><input name="freeAmount" type="number" min="0.01" step="any" value="50"><span>tUSD</span></span></label>
-        <label class="field"><span class="field__label">Sent straight to</span><input name="freeTo" placeholder="their-account.testnet"></label>
-      </div>
       <div class="agree" data-agree></div>
       <div data-go></div>
       <p class="small" data-msg aria-live="polite"></p>
@@ -615,14 +610,14 @@ function startPage() {
     const who = f.get("who");
     const releaser = who === "me" ? me : (f.get("releaser") || "").trim();
     const payees = f.getAll("payee");
-    const free = f.get("free") === "on";
+    const free = false;
     return {
       me, who, releaser, payees, free,
       title: (f.get("title") || "").trim(),
       reference: (f.get("reference") || "").trim(),
       target: units(f.get("target")),
       deadline: Number(f.get("deadline")),
-      aon: f.get("aon") === "on",
+      aon: false,
       freeLabel: (f.get("freeLabel") || "").trim(),
       freeAmount: units(f.get("freeAmount")),
       freeTo: (f.get("freeTo") || "").trim() || me,
@@ -643,7 +638,6 @@ function startPage() {
   function update() {
     const d = read();
     form.querySelector("[name=releaser]").hidden = d.who === "me";
-    form.querySelector("[data-free]").hidden = !d.free;
     const names = d.payees.map((id) => nameOf(id));
     const who = d.who === "dao" ? `a vote of ${d.releaser || "the DAO"}` : d.who === "me" ? "you" : d.releaser || "the person you name";
     form.querySelector("[data-agree]").innerHTML = `
@@ -653,7 +647,7 @@ function startPage() {
         <li>Only ${esc(who)} can pay those bills.</li>
         ${d.free ? `<li>${money(d.freeAmount || 0)} is “${esc(d.freeLabel)}”, sent straight to ${esc(d.freeTo || "the person you name")} as it comes in.</li>` : ""}
         <li>${d.aon ? "If the target isn't reached, nothing is paid and everyone gets everything back." : "Bills can be paid from whatever has been raised."}</li>
-        <li>After the deadline, whatever is left goes back to each giver, in proportion.</li>
+        <li>After the deadline, anyone can send what's left back to each giver, in proportion to what they gave. Nobody has to approve it.</li>
         <li>Nobody can change these rules later, including you.</li>
       </ul>`;
     const go = form.querySelector("[data-go]");
@@ -751,7 +745,7 @@ const EXAMPLES = [
 const exampleFor = (id) => EXAMPLES.find((e) => e.id === Number(id));
 
 function potCard(p, ex) {
-  const kind = p.kind === "Group" ? "Decided by a vote" : "One person presses pay";
+  const kind = p.kind === "Group" ? "Decided by a vote" : "One person pays the bills";
   return `
   <a class="slip pot-card ${p.kind === "Group" ? "slip--yellow" : ""}" href="#/pot/${p.id}" style="text-decoration:none;color:inherit">
     ${ex ? `<p class="kicker">${esc(ex.kicker)}</p>` : ""}
@@ -769,7 +763,7 @@ async function potsPage() {
   main.innerHTML = `
   <section class="page-head">
     <h1>Money boxes</h1>
-    <p class="lead">Every money box lives on NEAR testnet and is read live. Start with our three examples, and try to cheat them. Boxes that people start show up underneath.</p>
+    <p class="lead">Every money box lives on NEAR testnet and is read live. Start with our three examples and try to cheat them. Boxes that people start show up underneath.</p>
   </section>
   <section aria-labelledby="ex-h">
     <h2 id="ex-h" class="kicker">Our examples</h2>
@@ -779,15 +773,10 @@ async function potsPage() {
     <h2 id="yours-h">Boxes people made</h2>
     <div class="pot-list" data-yours><p class="loading">Reading the contract…</p></div>
     <p><a class="button" href="#/start">Start a money box</a></p>
-  </section>
-  <details class="older" data-older-wrap hidden>
-    <summary>Older practice boxes from our test run <span data-older-n></span></summary>
-    <div class="pot-list" data-older></div>
-  </details>`;
+  </section>`;
   try {
     const { value: pots } = await view(POTS, "get_pots", { from_index: 0, limit: 100 });
     const ours = (id) => id.endsWith(`.${ROOT}`);
-    const exIds = EXAMPLES.map((e) => e.id);
     main.querySelector("[data-examples]").innerHTML = EXAMPLES
       .map((e) => pots.find((p) => p.id === e.id))
       .filter(Boolean)
@@ -797,12 +786,6 @@ async function potsPage() {
     main.querySelector("[data-yours]").innerHTML = yours.length
       ? yours.map((p) => potCard(p)).join("")
       : `<p>None yet. Be the first: it takes a minute on testnet.</p>`;
-    const older = pots.filter((p) => ours(p.creator) && !exIds.includes(p.id));
-    if (older.length) {
-      main.querySelector("[data-older-wrap]").hidden = false;
-      main.querySelector("[data-older-n]").textContent = `(${older.length})`;
-      main.querySelector("[data-older]").innerHTML = older.map((p) => potCard(p)).join("");
-    }
   } catch {
     main.querySelector("[data-examples]").innerHTML = `<p class="error">Couldn't reach NEAR testnet just now. Reload the page to try again.</p>`;
     main.querySelector("[data-yours]").innerHTML = "";
@@ -870,7 +853,8 @@ async function potPage(id) {
   <section class="page-head">
     ${ex ? `<p class="kicker">${esc(ex.kicker)}</p>` : ""}
     <h1>${esc(titleOf(p))}</h1>
-    <p class="lead">This money can only go to ${esc(only)}, against their own bills. ${group ? "A vote decides each payment." : `${esc(cap(SAY[p.releaser] || nameOf(p.releaser)))} presses pay.`} Whatever isn't used goes back to the givers.</p>
+    <p class="lead">This money can only go to ${esc(only)}, against their own bills. ${group ? "A vote of the group decides each payment." : p.releaser === currentAccount() ? "You pay the bills." : `${esc(cap(SAY[p.releaser] || nameOf(p.releaser)))} pays the bills.`} Whatever isn't used goes back to the givers.</p>
+    ${p.id === INTENTS_BOX ? `<div class="demo"><span class="demo__tag">NEAR Intents</span> <strong>Given from abroad, the NEAR Intents way.</strong> NEAR Intents lets someone pay from another chain, like USDC on Base or Solana, and the money is delivered by a go-between. Here the go-between delivered 150 and named the uncle as the giver, so the box credited the uncle, not the go-between. It then delivered 100 more, but only 50 fitted the 200 target: the other 50 was kept for the uncle, not bounced back, and he took it out. NEAR Intents only runs on mainnet, so on testnet a stand-in account plays its part. <a href="${EXPLORER}/address/intents-relay.${ROOT}" target="_blank" rel="noopener">See the stand-in's transactions</a>.</div>` : ""}
     ${nextSteps(p)}
     <div class="split">
       <p><strong>${money(p.target)}</strong> can only go to ${esc(only)}.</p>
@@ -890,7 +874,7 @@ async function potPage(id) {
     <article class="slip ${group ? "slip--yellow" : ""}">
       <div class="slip__head"><h2>The rules</h2><span class="slip__no">Money box no. ${p.id}</span></div>
       ${p.payees.map((x) => field("Can be paid", `${esc(payeeName(x))} <small>${acct(x.account_id)} ${x.verified ? '<span class="check">on the verified list</span>' : "(no longer verified)"}</small><small>${evidenceLine(x)}</small>`)).join("")}
-      ${field(group ? "Who decides each payment" : "Who presses pay", `${esc(nameOf(p.releaser))} <small>${acct(p.releaser)}</small>`)}
+      ${field(group ? "Who decides each payment" : "Who pays the bills", `${esc(nameOf(p.releaser))} <small>${acct(p.releaser)}</small>`)}
       ${field("If the target isn't reached", p.all_or_nothing ? "Nothing is paid, and everyone gets everything back" : "Bills can be paid from what has been raised")}
       ${field("Reference sent with each payment", esc(p.reference || "None"))}
       ${field("Started by", `${esc(nameOf(p.creator))} <small>${acct(p.creator)}</small>`)}
@@ -962,14 +946,13 @@ async function renderActions(p) {
   const allGone = p.payees.every((x) => !x.verified);
   const closable = open && (p.deadline_passed || allGone);
   const openBills = p.requests.filter((r) => r.status === "Open");
-  const blocks = [];
-
-  if (!me) {
-    blocks.push(`<p>Sign in with a NEAR testnet wallet to ${closable ? "close this box and send the rest back" : "give or pay a bill"}.</p>
-      <p><button class="button" type="button" data-act="signin">Sign in</button></p>
-      <p class="small">No testnet wallet or test dollars yet? <a href="#/try">How to try it</a> takes five minutes.</p>`);
-  } else {
-    let bal = 0n, registered = false;
+  const unconfirmed = p.payments.map((x, i) => ({ ...x, i })).filter((x) => !x.confirmed);
+  const group = p.kind === "Group";
+  const payer = me === p.releaser ? "you" : group ? "the group, by a vote" : (SAY[p.releaser] || nameOf(p.releaser));
+  const isPayee = (id) => p.payees.some((x) => x.account_id === id);
+  const demoBox = !Object.values(LIVE).includes(p.id); // the open "try to cheat" boxes keep their one bill
+  let bal = 0n, registered = false;
+  if (me) {
     try {
       const [b, s] = await Promise.all([
         view(TOKEN, "ft_balance_of", { account_id: me }),
@@ -978,48 +961,79 @@ async function renderActions(p) {
       bal = BigInt(b.value);
       registered = Boolean(s.value);
     } catch {}
-    blocks.push(`<p>Signed in as <strong>${esc(me)}</strong>. You have <strong>${money(bal)}</strong>.</p>
-      ${bal + 500_000_000n <= 1_000_000_000n ? `<p><button class="button button--quiet" type="button" data-act="dollars" data-registered="${registered}">Get 500 test dollars</button></p>` : ""}`);
-    if (live) {
-      const freeLeft = BigInt(p.free_target) - BigInt(p.free_sent);
-      blocks.push(`<form data-give class="mini">
-        <h3>Give</h3>
-        <label class="field"><span class="field__label">Amount</span><span class="amount-row"><input name="amount" type="number" min="0.01" step="any" value="20"><span>tUSD</span></span></label>
-        ${freeLeft > 0n ? `<label class="field"><span class="field__label">For</span><select name="part">
-          <option value="purpose">The purpose (only to ${esc(either(p.payees.map(payeeName)))})</option>
-          <option value="free">“${esc(p.free_label)}”, straight to ${esc(nameOf(p.free_to))}</option></select></label>` : ""}
-        <button class="button" type="submit">Give</button></form>`);
-    }
-    if (me === p.releaser && live) {
-      blocks.push(`<h3>Bills waiting for you to pay</h3>${openBills.length ? openBills.map((r) => `
-        <p>${esc(payeeOf(p, r.payee))}: ${esc(r.note)}, <strong>${money(r.amount)}</strong>
-        <button class="button" type="button" data-act="pay" data-id="${r.id}">Pay this bill</button></p>`).join("") : "<p>No bills yet.</p>"}`);
-    }
-    if (p.payees.some((x) => x.account_id === me) && live) blocks.push(billForm(me, false));
-    const mineToConfirm = p.payments.map((x, i) => ({ ...x, i })).filter((x) => x.to === me && !x.confirmed);
-    mineToConfirm.forEach((x) => blocks.push(`<p>You were paid ${money(x.amount)}. <button class="button" type="button" data-act="confirm" data-id="${x.i}">Confirm you received it</button></p>`));
-    if (closable) blocks.push(`<p>${allGone ? "Every payee has left the verified list." : "The deadline has passed."} Anyone can close the box now.</p>
-      <p><button class="button" type="button" data-act="close">Close the box and send the rest back</button></p>`);
-    blocks.push(`<p><button class="link" type="button" data-act="signout">Sign out</button></p>`);
+  }
+  const signInFirst = (what) => `<p><button class="button" type="button" data-act="signin">Sign in to ${what}</button></p>
+    <p class="small">No testnet wallet yet? <a href="#/try">How to try it</a> takes five minutes.</p>`;
+  const demoNote = (payee) => `<p class="demo"><span class="demo__tag">Demo only</span> ${esc(payeeOf(p, payee))} is made up, so you do its part here. In real use, ${esc(payeeOf(p, payee))} does this from its own account. This uses its limited demo key, which can send bills and confirm payments but can never move money.</p>`;
+  const giveForm = (label) => {
+    const freeLeft = BigInt(p.free_target) - BigInt(p.free_sent);
+    return `<form data-give class="mini">
+      <label class="field"><span class="field__label">Amount</span><span class="amount-row"><input name="amount" type="number" min="0.01" step="any" value="20"><span>tUSD</span></span></label>
+      ${freeLeft > 0n ? `<label class="field"><span class="field__label">For</span><select name="part">
+        <option value="purpose">The purpose (only to ${esc(either(p.payees.map(payeeName)))})</option>
+        <option value="free">“${esc(p.free_label)}”, straight to ${esc(nameOf(p.free_to))}</option></select></label>` : ""}
+      <button class="button" type="submit">${label}</button></form>`;
+  };
+
+  // The one next step, said plainly, with only the button for it.
+  let title = "", body = "";
+  if (!open) {
+    title = "This box is closed";
+    body = `<p>Whatever wasn't used went back to the people who gave.</p>`;
+  } else if (closable) {
+    title = "Next: send what's left back to the givers";
+    body = `<p>${allGone ? "Every payee has left the verified list." : "The deadline has passed."} Anyone can do this, and nobody has to approve it. The contract works out each giver's share.</p>
+      ${me ? `<p><button class="button" type="button" data-act="close">Send the rest back</button></p>` : signInFirst("send it back")}`;
+  } else if (BigInt(p.raised) === 0n) {
+    title = "Next: someone gives money";
+    body = `<p>The box is empty. Once there's money in it, ${esc(either(p.payees.map(payeeName)))} can send a bill.</p>${me ? giveForm("Give") : signInFirst("give")}`;
+  } else if (openBills.length) {
+    const r = openBills[0];
+    title = group ? "Next: the group votes to pay the bill" : `Next: ${me === p.releaser ? "you pay" : `${esc(payer)} pays`} the bill`;
+    body = `<p>${esc(payeeOf(p, r.payee))} sent a bill for <strong>${money(r.amount)}</strong>: ${esc(r.note)}.</p>
+      ${group && me !== p.releaser
+        ? `<p class="small">The members vote in the group's own Sputnik DAO, ${acct(p.releaser)}. When more than half say yes, the DAO pays the bill, and the contract still checks it can only go to ${esc(payeeOf(p, r.payee))}.</p>`
+        : me === p.releaser
+        ? `<p><button class="button" type="button" data-act="pay" data-id="${r.id}">Pay ${money(r.amount)} to ${esc(payeeOf(p, r.payee))}</button></p><p class="small">The money can only go to ${esc(payeeOf(p, r.payee))}, and only this amount.</p>`
+        : `<p class="small">Only ${esc(payer)} can pay it.${me ? "" : " If that's you, sign in."}</p>${me ? "" : signInFirst("pay it")}`}`;
+  } else if (unconfirmed.length) {
+    const x = unconfirmed[0];
+    const to = payeeOf(p, x.to);
+    title = `Next: ${esc(to)} confirms it got the money`;
+    body = `<p>${money(x.amount)} was paid to ${esc(to)}. When ${esc(to)} confirms it arrived, the contract issues the pass.</p>`;
+    if (me === x.to) body += `<p><button class="button" type="button" data-act="confirm" data-id="${x.i}">Confirm you received ${money(x.amount)}</button></p>`;
+    else if (canPlay(x.to)) body += `${demoNote(x.to)}<p><button class="button" type="button" data-act="playconfirm" data-to="${esc(x.to)}" data-id="${x.i}">Confirm as ${esc(to)}</button></p>`;
+    else body += `<p class="small">Waiting for ${esc(to)}.</p>`;
+  } else {
+    const done = p.payments.length > 0;
+    const playable = p.payees.filter((x) => x.verified && canPlay(x.account_id));
+    title = done ? "Paid and confirmed" : `Next: ${esc(either(p.payees.map(payeeName)))} sends a bill`;
+    body = done
+      ? `<p>The payee confirmed it was paid, and the pass was issued. <a href="#/pass/${esc(p.releaser)}">See the pass</a>.</p><p>There is still ${money(p.held)} in the box. It can pay another bill, and what's left goes back to the givers after the deadline.</p>`
+      : `<p>There is ${money(p.held)} in the box. Nothing can leave until ${esc(either(p.payees.map(payeeName)))} asks for it with a bill.</p>`;
+    if (isPayee(me)) body += billForm(me, false);
+    else if (demoBox && playable.length) body += playable.map((x) => `${demoNote(x.account_id)}${billForm(x.account_id, true)}`).join("");
+    else if (!done) body += `<p class="small">Waiting for the bill.</p>`;
   }
 
-  // The open "try to break" boxes keep their one bill, so playing payees is offered on other boxes.
-  if (live && !Object.values(LIVE).includes(p.id)) {
-    p.payees.filter((x) => x.verified && canPlay(x.account_id)).forEach((x) => blocks.push(billForm(x.account_id, true)));
+  // Everything else, out of the way.
+  const more = [];
+  if (me) {
+    more.push(`<p>Signed in as <strong>${esc(me)}</strong>. You have <strong>${money(bal)}</strong>.</p>`);
+    if (bal + 500_000_000n <= 1_000_000_000n) more.push(`<p><button class="button button--quiet" type="button" data-act="dollars" data-registered="${registered}">Get 500 test dollars</button></p>`);
+    if (live && BigInt(p.raised) > 0n) more.push(`<h3>Give more</h3>${giveForm("Give")}`);
+    more.push(`<p><button class="link" type="button" data-act="signout">Sign out</button></p>`);
   }
-  p.payments.map((x, i) => ({ ...x, i })).filter((x) => !x.confirmed && canPlay(x.to) && x.to !== me)
-    .forEach((x) => blocks.push(`<p>Play ${esc(payeeOf(p, x.to))}: <button class="button button--quiet" type="button" data-act="playconfirm" data-to="${esc(x.to)}" data-id="${x.i}">Confirm it received ${money(x.amount)}</button></p><p class="small">Confirming is what issues the pass.</p>`));
-
-  box.innerHTML = `<div class="slip__head"><h2 id="act-h">What you can do here</h2></div>${blocks.join("")}<p class="small" data-msg aria-live="polite"></p>`;
+  box.innerHTML = `<div class="slip__head"><h2 id="act-h">${title}</h2></div>${body}
+    <p class="small" data-msg aria-live="polite"></p>
+    ${more.length ? `<details class="more"><summary>Other actions</summary>${more.join("")}</details>` : ""}`;
   const msg = box.querySelector("[data-msg]");
 
   function billForm(payee, play) {
     return `<form data-bill data-payee="${esc(payee)}" data-play="${play}" class="mini">
-      <h3>${play ? `Play ${esc(payeeOf(p, payee))}: send a bill` : "Send a bill"}</h3>
-      ${play ? `<p class="small">${esc(payeeOf(p, payee))} is made up, so you play its part. This uses its limited demo key, which can only send bills and confirm payments, never move money. No wallet needed.</p>` : ""}
       <label class="field"><span class="field__label">Amount</span><span class="amount-row"><input name="amount" type="number" min="0.01" step="any" value="${Math.min(Number(BigInt(p.held) / 1_000_000n) || 50, 280)}"><span>tUSD</span></span></label>
-      <label class="field"><span class="field__label">What it's for</span><input name="note" maxlength="80" value="${p.reference ? "Fees for " + esc(p.reference) : "Payment"}"></label>
-      <button class="button ${play ? "button--quiet" : ""}" type="submit">Send the bill</button></form>`;
+      <label class="field"><span class="field__label">What it's for</span><input name="note" maxlength="80" placeholder="What the bill is for" value=""></label>
+      <button class="button" type="submit">${play ? `Send a bill as ${esc(payeeOf(p, payee))}` : "Send the bill"}</button></form>`;
   }
 
   async function run(label, fn) {
@@ -1189,7 +1203,7 @@ async function payeesPage() {
   main.innerHTML = `
   <section class="page-head">
     <h1>Payees</h1>
-    <p class="lead">A money box can only pay accounts on the verified list. Nobody adds to that list alone: a payee is proposed with evidence, and the school-list council votes on it. Everything here is read live from NEAR.</p>
+    <p class="lead">A money box can only pay accounts on the verified list. Nobody adds to that list alone: a payee is proposed with evidence, and the payee council votes on it. Everything here is read live from NEAR.</p>
     <p class="cta">
       <a class="button" href="#mine-h">I'm a school or payee</a>
       <a class="button button--quiet" href="#propose-h">Propose a payee</a>
@@ -1249,7 +1263,7 @@ async function payeesPage() {
   const holder = cfg && cfg.value.registry_dao;
 
   main.querySelector("[data-holder]").innerHTML = holder
-    ? `The list is held by ${holder === COUNCIL_DAO ? "the school-list council's DAO" : esc(nameOf(holder))}: ${acct(holder)}. Nobody else can change it.`
+    ? `The list is held by ${holder === COUNCIL_DAO ? "the payee council's DAO" : esc(nameOf(holder))}: ${acct(holder)}. Nobody else can change it.`
     : "";
   main.querySelector("[data-list]").innerHTML = payees.length
     ? payees.map((x) => `<article class="slip payee">
@@ -1257,8 +1271,33 @@ async function payeesPage() {
         <p class="small">${acct(x.account_id)}</p>
         <p class="small">${evidenceLine(x)}</p>
         <p class="small">On the list since ${when(x.added_at_ns)}</p>
+        <p class="small"><button class="link" type="button" data-remove="${esc(x.account_id)}" data-name="${esc(payeeName(x))}">Propose removing</button> <span data-remove-msg></span></p>
       </article>`).join("")
     : `<p>The list is empty.</p>`;
+  const listEl = main.querySelector("[data-list]");
+  if (!listEl.dataset.wired) listEl.dataset.wired = "1", listEl.addEventListener("click", async (e) => {
+    const b = e.target.closest("[data-remove]");
+    if (!b) return;
+    const msg = b.parentElement.querySelector("[data-remove-msg]");
+    if (!currentAccount()) { msg.textContent = "Sign in first, then press it again."; return signIn(); }
+    if (!b.dataset.sure) {
+      b.dataset.sure = "1";
+      b.textContent = "Yes, ask the council to vote on removing it";
+      msg.textContent = "Proposing needs the council's bond (0.1 NEAR), which comes back if the vote passes. Givers to boxes that pay only this payee can take their money back once it is removed.";
+      return;
+    }
+    b.disabled = true;
+    msg.textContent = "Confirm it in your wallet…";
+    try {
+      const { value: policy } = await view(COUNCIL_DAO, "get_policy");
+      await proposeRemoval(b.dataset.remove, b.dataset.name, policy.proposal_bond);
+      msg.textContent = "Sent. It now waits for the council's vote, below.";
+      setTimeout(() => payeesPage(), 1500);
+    } catch (err) {
+      msg.textContent = explain(err);
+      b.disabled = false;
+    }
+  });
 
   // For payees: the boxes that name the signed-in account.
   const mine = main.querySelector("[data-mine]");
@@ -1363,7 +1402,7 @@ function payeeBox(p, me) {
   return `<article class="slip" data-box="${p.id}">
     <div class="slip__head"><h3><a href="#/pot/${p.id}">${esc(titleOf(p))}</a></h3><span class="slip__no">No. ${p.id}</span></div>
     ${field("In the box now", money(p.held))}
-    ${field("Who presses pay", esc(p.kind === "Group" ? "A vote of the group" : nameOf(p.releaser)))}
+    ${field("Who pays the bills", esc(p.kind === "Group" ? "A vote of the group" : nameOf(p.releaser)))}
     ${myBills.length ? `<ul class="bills">${myBills.map((x) => `<li>${money(x.amount)} · ${esc(x.note || "no note")} · <strong>${esc({ Open: "waiting to be paid", Paid: "paid", Cancelled: "cancelled" }[x.status] || x.status)}</strong></li>`).join("")}</ul>` : ""}
     ${toConfirm.map((x) => `<p><button class="button" type="button" data-confirm="${x.i}">Confirm you received ${money(x.amount)}</button></p>`).join("")}
     ${open ? `<form class="mini" data-bill>
@@ -1430,6 +1469,7 @@ async function proofPage() {
   <section class="page-head">
     <h1>Check every step yourself</h1>
     <p class="lead">These are the transactions from the full demo run on NEAR testnet. Each link opens the public explorer. The refused ones are the cheating attempts, and they failed on purpose.</p>
+    <p><a class="button button--quiet" href="${EXPLORER}/address/${POTS}" target="_blank" rel="noopener">See every transaction, including everyone else's, on the NEAR explorer</a></p>
   </section>
   <div class="pot-grid">
     <section class="slip" aria-labelledby="run-h">
@@ -1447,7 +1487,7 @@ async function proofPage() {
         ${field("Test dollars (no value)", acct(TOKEN))}
         ${field("School-list council", acct(COUNCIL_DAO))}
         ${field("The street", acct(STREET_DAO))}
-        <p class="small">Two Sputnik DAOs hold the school list and the street's vote. The contract is not locked yet: we kept its key to fix bugs during the hackathon. Running <code>node scripts/verify.mjs</code> checks that the code on chain is exactly the code in the repository.</p>
+        <p class="small">Two Sputnik DAOs hold the verified list and the street's vote. The contract is not locked yet: we kept its key to fix bugs during the hackathon. Running <code>node scripts/verify.mjs</code> checks that the code on chain is exactly the code in the repository.</p>
       </section>
     </div>
   </div>`;

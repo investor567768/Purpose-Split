@@ -18,6 +18,7 @@ export const STORY = { family: 0, street: 1, appeal: 2 };
 export const LIVE = { family: 3, street: 4, appeal: 5 };
 // The "split" box: one school year paid to the school, a bookshop and a hostel, plus pocket money.
 export const SPLIT = 6;
+export const INTENTS_BOX = 7; // the gift through a stand-in for NEAR Intents (scripts/intents-sim.mjs)
 
 const s = (name) => `${name}.${ROOT}`;
 
@@ -28,10 +29,10 @@ export const PEOPLE = {
   [s("tolu")]: "The student",
   [s("chairman")]: "The street chairman",
   [STREET_DAO]: "The street's vote",
-  [COUNCIL_DAO]: "The school-list council",
+  [COUNCIL_DAO]: "The payee council",
   [s("registry-dev")]: "The deployer",
   [s("council-seat")]: "A council seat held by the build",
-  ["chrysolitee.testnet"]: "Chrysolite, a councillor",
+  ["chrysolitee.testnet"]: "Chrysolite",
   [s("llu")]: "Lagos Lagoon University",
   [s("marinapoly")]: "Marina Polytechnic",
   [s("llu-bursary")]: "A lookalike of the school's account",

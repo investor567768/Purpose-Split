@@ -88,7 +88,7 @@ await check("The deployed code is exactly the code in this repository", async ()
 }
 
 // ------------------------------------------------------------ who decides
-await check("Only the school-list council, a Sputnik DAO, can change the verified list", async () => {
+await check("Only the payee council, a Sputnik DAO, can change the verified list", async () => {
   const c = await view(POTS, "get_config");
   return { ok: c.registry_dao === COUNCIL, detail: `get_config says the list is held by ${c.registry_dao}` };
 });
@@ -132,6 +132,12 @@ await check("The student holds a \"Fees paid\" pass, made by the school's confir
   const passes = await view(POTS, "get_passes", { account_id: s("tolu") });
   const p = passes.find((x) => x.pot_id === 0);
   return { ok: Boolean(p) && p.title.startsWith("Fees paid") && p.payee === s("llu"), detail: p ? `"${p.title}", pass ${p.token_id}, ${usd(p.amount)}` : "no pass for box 0" };
+});
+await check("Any system can ask the contract \"has this student paid this school?\" and get yes or no", async () => {
+  const yes = await view(POTS, "has_paid", { account_id: s("tolu"), payee: s("llu") });
+  const parent = await view(POTS, "has_paid", { account_id: s("mum"), payee: s("llu") });
+  const other = await view(POTS, "has_paid", { account_id: s("tolu"), payee: s("marinapoly") });
+  return { ok: yes === true && parent === false && other === false, detail: `has_paid(student, school) = ${yes}; the parent who gave = ${parent}; a school he didn't pay = ${other}` };
 });
 await check("Passes are standard NEAR NFTs (NEP-171) anyone can read", async () => {
   const m = await view(POTS, "nft_metadata");

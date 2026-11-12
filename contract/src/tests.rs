@@ -1460,3 +1460,28 @@ fn a_go_between_cannot_bypass_the_token_check() {
     at(intents(), 1);
     let _ = c.ft_on_transfer(intents(), U128(D), format!(r#"{{"pot_id":{id},"giver":"{}"}}"#, uncle()));
 }
+
+// ------------------------------------------------------------- the access check
+
+#[test]
+fn has_paid_says_yes_only_after_the_school_confirms() {
+    let mut c = setup();
+    let id = funded_family_pot(&mut c);
+    assert!(!c.has_paid(tolu(), unilag()), "nothing paid yet");
+    at(tolu(), 5);
+    let _ = c.pay_request(id, 0);
+    assert!(!c.has_paid(tolu(), unilag()), "paid, but the school hasn't confirmed");
+    at(unilag(), 6);
+    c.confirm_payment(id, 0);
+    assert!(c.has_paid(tolu(), unilag()));
+}
+
+#[test]
+fn has_paid_is_about_the_right_school_and_the_right_person() {
+    let mut c = setup();
+    paid_and_confirmed_fees(&mut c);
+    assert!(c.has_paid(tolu(), unilag()));
+    assert!(!c.has_paid(tolu(), lasu()), "a pass for one school says nothing about another");
+    assert!(!c.has_paid(mum(), unilag()), "the parent who gave holds no pass; the student does");
+    assert!(!c.has_paid(acc("friend.testnet"), unilag()), "a friend can't borrow the answer");
+}

@@ -1,7 +1,7 @@
 // Creates the two Sputnik DAOs Purpose Split leans on, through NEAR's own DAO
 // factory (sputnik-v2.testnet). Nothing here is a multisig of ours.
 //
-//   purposesplit-council.sputnik-v2.testnet   the school-list council: votes payees onto the verified list
+//   purposesplit-council.sputnik-v2.testnet   the payee council: votes payees onto the verified list
 //   adeyemi-street.sputnik-v2.testnet         the street: its neighbours vote to pay the electrician
 //
 // Usage: node daos.mjs   (safe to run twice: existing DAOs are left alone)

@@ -901,3 +901,9 @@ a.acct:hover { color: var(--ink); }
   .wordmark { font-size: 0.92rem; gap: 6px; }
   .wordmark__mark { width: 16px; height: 16px; }
 }
+
+/* v8.7: the box page's one next step */
+.demo { margin: 14px 0 6px; padding: 10px 12px; background: var(--counter); font-size: 0.95rem; }
+.demo__tag { display: inline-block; margin-right: 6px; padding: 1px 7px; border: 1.5px solid var(--violet); color: var(--violet); font-size: 0.75rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
+.more { margin-top: 18px; border-top: 1px dashed rgba(var(--rule-rgb), 0.45); padding-top: 12px; }
+.more summary { cursor: pointer; color: var(--print); font-weight: 600; }
