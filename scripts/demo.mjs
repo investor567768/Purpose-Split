@@ -161,7 +161,8 @@ for (const id of [P.school, P.otherSchool, P.lookalike, P.sparks, P.hospital, P.
 for (const id of P.residents) if ((await balanceOf(id)) < 1.2) await account(ROOT).transfer({ receiverId: id, amount: NEAR });
 if ((await balanceOf(STANDIN_COUNCILLOR)) < 0.6) await account(ROOT).transfer({ receiverId: STANDIN_COUNCILLOR, amount: NEAR });
 await ensureAccount(P.organiser, 0.6);
-if (MODE === "dev") {
+{
+  // A fresh contract for this mode is deployed if it does not exist yet.
   await ensureAccount(REGISTRY, 0.6);
   if (!(await exists(POTS))) {
     const { execFileSync } = await import("node:child_process");
@@ -183,8 +184,8 @@ if (BigInt(await view(POTS, "get_owed", { account_id: P.tolu })) > 0n) {
     await call(P.tolu, POTS, "withdraw_owed", {}, { gas: 100n * TGAS }));
 }
 
-if (MODE === "dev") {
-  // The evidence links use the reserved .example domain: the schools are made up.
+{
+  // The deployer seeds the first payees (skipped once they are on the list). The evidence links use the reserved .example domain: the schools are made up.
   for (const [id, name, kind, evidence] of [
     [P.school, "Lagos Lagoon University (demo)", "School", "https://lagoslagoon.example/pay-fees"],
     [P.otherSchool, "Marina Polytechnic (demo)", "School", "https://marinapoly.example/bursary"],

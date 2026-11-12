@@ -2,7 +2,7 @@
 // browser. "Try to cheat" asks the contract's own `why_refused` check, so the
 // answers on screen are the contract's words, not ours.
 
-import { CHEATS, COUNCIL_DAO, EXPLORER, LIVE, PEOPLE, POTS, RPCS, ROOT, SAY, STORY, SPLIT, TOKEN, GITHUB } from "./config.js";
+import { CHEATS, COUNCIL_DAO, STREET_DAO, EXPLORER, LIVE, PEOPLE, POTS, RPCS, ROOT, SAY, STORY, SPLIT, TOKEN, GITHUB } from "./config.js";
 import {
   canPlay, closeBox, confirmPayment, createBox, currentAccount, explain, getTestDollars, give,
   loadWallet, onAccountChange, payBill, playPayee, proposePayee, sendBill, signIn, signOut, voteOnCouncil,
@@ -332,7 +332,8 @@ const QUESTIONS = [
   ["Can the student send the money anywhere else?", "No. The money box pays only the school named on it, and only against a bill the school itself sent. Try it above: every other destination is refused."],
   ["What is the pass?", `When the school confirms it was paid, the contract gives the student a "Fees paid" pass. Nobody can make one any other way, and it can't be sold or lent to a friend. Anyone can check it, for example before an exam or at the hostel gate. <a href="#/pass">Check a pass</a>.`],
   ["How do you know the account really belongs to the school?", "The contract can't know that by itself, so the list has to be trustworthy. A school is added only by a council vote, and only with a link to where the school itself publishes its account. You see that link before you send. If a school is ever removed, families can take their money back at once."],
-  ["Can the people who built this take the money?", "The contract has no function that sends a box's money anywhere except its named payees, its stated free part, or back to the givers. In the final version the contract's keys are deleted so nobody can change that. This practice version is not locked yet."],
+  ["Can the people who built this take the money?", "The contract has no function that sends a box's money anywhere except its named payees, its stated free part, or back to the givers. This contract is not locked yet: we kept its key so we could fix a bug during the hackathon. Anyone can check that the code running now is exactly the open-source code, and a real launch would delete the key so nobody could change it."],
+  ["Why NEAR?", "Several things here work because it's NEAR. Accounts have names, like llu.purposesplit.testnet, so families can see who is being paid instead of a long code. The school list and the street's vote run on Sputnik DAO, NEAR's DAO system. A NEAR key can be limited to a few actions, which is how you can play the school on this site: its key can send bills and confirm payments, but can't move money. Passes are standard NEAR NFTs. And the money box is ready for NEAR Intents, so a relative abroad can give from another chain: the contract credits the gift and any refund to the real giver. Intents runs only on mainnet, so here it is shown with a stand-in."],
   ["What does it cost?", "We charge nothing. Each action is a NEAR transaction with a network fee well under a cent, and creating a money box needs a small one-time storage deposit in NEAR."],
   ["Can I check all this?", `Yes. Every step of the test run is on the public explorer, the books are checked live, and the contract is open source with a test for every rule. <a href="#/proof">Open the proof page</a>.`],
 ];
@@ -1288,7 +1289,9 @@ async function payeesPage() {
     main.querySelector("[data-bond]").textContent = `Proposing needs a bond of ${nearAmount(bond)}, which comes back when the proposal passes.`;
     main.querySelector("[data-council]").innerHTML = `The council: ${council.map((m) => `${esc(nameOf(m))} ${acct(m)}`).join(", ")}. DAO: ${acct(COUNCIL_DAO)}.`;
     const from = Math.max(0, last - 20);
-    const { value: proposals } = last ? await view(COUNCIL_DAO, "get_proposals", { from_index: from, limit: 20 }) : { value: [] };
+    const { value: all } = last ? await view(COUNCIL_DAO, "get_proposals", { from_index: from, limit: 20 }) : { value: [] };
+    // The council also served an earlier practice contract; show only votes about this one.
+    const proposals = all.filter((x) => x.kind && x.kind.FunctionCall && x.kind.FunctionCall.receiver_id === POTS);
     const amCouncillor = me && council.includes(me);
     votes.innerHTML = proposals.length
       ? `<ol class="votes">${proposals.slice().reverse().map((x) => {
@@ -1442,7 +1445,9 @@ async function proofPage() {
         <div class="slip__head"><h2 id="accounts-h">The accounts</h2></div>
         ${field("The contract", acct(POTS))}
         ${field("Test dollars (no value)", acct(TOKEN))}
-        <p class="small">This is the practice version. In the final version, two Sputnik DAOs take over the school list and the street's vote, and the contract's keys are deleted so nobody can change it.</p>
+        ${field("School-list council", acct(COUNCIL_DAO))}
+        ${field("The street", acct(STREET_DAO))}
+        <p class="small">Two Sputnik DAOs hold the school list and the street's vote. The contract is not locked yet: we kept its key to fix bugs during the hackathon. Running <code>node scripts/verify.mjs</code> checks that the code on chain is exactly the code in the repository.</p>
       </section>
     </div>
   </div>`;
@@ -1452,7 +1457,7 @@ async function proofPage() {
     .catch(() => (main.querySelector("[data-books]").innerHTML = `<p class="error">Couldn't reach NEAR testnet just now.</p>`));
 
   try {
-    const run = await (await fetch("data/demo-dev.json")).json();
+    const run = await (await fetch("data/demo-final.json")).json();
     const refused = run.steps.filter((s) => s.refused).length;
     main.querySelector("[data-count]").textContent = `${run.steps.length} steps, ${refused} refused`;
     main.querySelector("[data-steps]").innerHTML = run.steps

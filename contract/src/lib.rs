@@ -298,6 +298,13 @@ pub struct ContributeMsg {
     /// "purpose" (the default) or "free".
     #[serde(default)]
     pub part: Option<String>,
+    /// Who the gift is really from, when it arrives through a go-between such as
+    /// NEAR Intents (where the token sender is `intents.near`, not the person).
+    /// The gift, and any refund of it, is credited to this account. When a giver
+    /// is named, the contract never sends the tokens back to the go-between: any
+    /// part it can't accept is kept as owed to the giver, to withdraw at any time.
+    #[serde(default)]
+    pub giver: Option<AccountId>,
 }
 
 /// A part of the target that goes straight to one person, for costs nobody can
@@ -983,6 +990,9 @@ impl FungibleTokenReceiver for Contract {
         );
         let msg: ContributeMsg = serde_json::from_str(&msg)
             .unwrap_or_else(|_| env::panic_str("msg must look like {\"pot_id\": 0}"));
+        if let Some(giver) = msg.giver.clone() {
+            return PromiseOrValue::Value(U128(self.give_for(giver, sender_id, amount.0, &msg)));
+        }
         let pot_id = msg.pot_id;
         let free = match msg.part.as_deref() {
             None | Some("purpose") | Some("fees") => false,
@@ -1050,6 +1060,72 @@ impl FungibleTokenReceiver for Contract {
 }
 
 impl Contract {
+    /// A gift that names its giver (see `ContributeMsg::giver`). Never returns
+    /// tokens to the go-between: whatever can't go into the pot is owed to the giver.
+    fn give_for(&mut self, giver: AccountId, via: AccountId, amount: u128, msg: &ContributeMsg) -> u128 {
+        let reason = self.gift_refusal(msg, &giver);
+        let accepted = match reason {
+            Some(_) => 0,
+            None => {
+                let inner = ContributeMsg { pot_id: msg.pot_id, part: msg.part.clone(), giver: None };
+                let json = serde_json::to_string(&inner).unwrap();
+                match self.ft_on_transfer(giver.clone(), U128(amount), json) {
+                    PromiseOrValue::Value(unused) => amount - unused.0,
+                    PromiseOrValue::Promise(_) => amount,
+                }
+            }
+        };
+        let left = amount - accepted;
+        if left > 0 {
+            let owed = self.owed.get(&giver).copied().unwrap_or(0);
+            self.owed.insert(giver.clone(), owed + left);
+            self.total_owed += left;
+        }
+        event(
+            "gift_via",
+            serde_json::json!({
+                "pot_id": msg.pot_id, "giver": giver, "via": via,
+                "accepted": U128(accepted), "kept_as_owed": U128(left), "reason": reason,
+            }),
+        );
+        0
+    }
+
+    /// Why a gift to this pot can't be taken right now, without failing.
+    fn gift_refusal(&self, msg: &ContributeMsg, giver: &AccountId) -> Option<String> {
+        let free = match msg.part.as_deref() {
+            None | Some("purpose") | Some("fees") => false,
+            Some("free") | Some("pocket") => true,
+            Some(_) => return Some("part must be \"purpose\" or \"free\"".into()),
+        };
+        let pot = match u32::try_from(msg.pot_id).ok().and_then(|i| self.pots.get(i)) {
+            Some(pot) => pot,
+            None => return Some(format!("There is no pot #{}", msg.pot_id)),
+        };
+        if pot.status != PotStatus::Open {
+            return Some("This pot is closed".into());
+        }
+        if env::block_timestamp() > pot.deadline_ns {
+            return Some("This pot's deadline has passed".into());
+        }
+        if self.all_payees_removed(pot) {
+            return Some("This pot's payees are no longer verified, so it cannot take money".into());
+        }
+        if free {
+            if pot.free_to.is_none() {
+                return Some("This pot has no free part".into());
+            }
+            if pot.free_target <= pot.free_sent {
+                return Some("This pot's free part is already complete".into());
+            }
+        } else if pot.target <= pot.raised {
+            return Some("This pot has already reached its target".into());
+        } else if pot.contributions.len() >= MAX_CONTRIBUTORS && !pot.contributions.iter().any(|(a, _)| a == giver) {
+            return Some("This pot already has the most contributors it can take".into());
+        }
+        None
+    }
+
     fn pay(&mut self, pot_id: u64, to: AccountId, amount: u128, request_id: Option<u32>) -> Promise {
         let caller = env::predecessor_account_id();
         let pot = self.pot(pot_id);

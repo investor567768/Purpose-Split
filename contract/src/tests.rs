@@ -1366,3 +1366,97 @@ fn after_the_handover_the_deployer_cannot_take_it_back() {
     at(registry(), 2);
     c.set_registry_dao(registry());
 }
+
+// ------------------------------------------------------------- gifts through a go-between (NEAR Intents)
+
+fn intents() -> AccountId {
+    acc("intents.near")
+}
+
+/// A gift delivered by a go-between such as NEAR Intents, naming the real giver.
+/// Returns the part handed back to the go-between (always 0).
+fn add_via(c: &mut Contract, pot_id: u64, giver: AccountId, amount: u128, part: &str, minutes: u64) -> u128 {
+    at(token(), minutes);
+    let msg = format!(r#"{{"pot_id":{pot_id},"part":"{part}","giver":"{giver}"}}"#);
+    match c.ft_on_transfer(intents(), U128(amount), msg) {
+        PromiseOrValue::Value(v) => v.0,
+        PromiseOrValue::Promise(_) => panic!("expected a value"),
+    }
+}
+
+#[test]
+fn a_gift_through_intents_is_credited_to_the_real_giver() {
+    let mut c = setup();
+    let id = new_family_pot(&mut c);
+    assert_eq!(add_via(&mut c, id, uncle(), 100 * D, "purpose", 1), 0);
+    let p = c.get_pot(id).unwrap();
+    assert_eq!(p.raised.0, 100 * D);
+    assert_eq!(p.contributions.len(), 1);
+    assert_eq!(p.contributions[0].account_id, uncle());
+    assert!(p.contributions.iter().all(|x| x.account_id != intents()));
+    assert!(logged("gift_via"));
+}
+
+#[test]
+fn a_refund_of_a_gift_through_intents_goes_to_the_real_giver() {
+    let mut c = setup();
+    let id = new_family_pot(&mut c);
+    add_via(&mut c, id, uncle(), 100 * D, "purpose", 1);
+    at(mum(), 61);
+    c.settle(id);
+    let logs = get_logs().join("\n");
+    assert!(logs.contains(uncle().as_str()));
+    assert!(!logs.contains("intents.near"));
+}
+
+#[test]
+fn a_gift_through_intents_over_the_target_is_kept_for_the_giver_not_bounced() {
+    let mut c = setup();
+    let id = new_family_pot(&mut c);
+    assert_eq!(add_via(&mut c, id, uncle(), 350 * D, "purpose", 1), 0);
+    assert_eq!(c.get_pot(id).unwrap().raised.0, 300 * D);
+    assert_eq!(c.get_owed(uncle()).0, 50 * D);
+    assert_eq!(c.get_owed(intents()).0, 0);
+    let t = c.get_totals();
+    assert_eq!(t.held.0 + t.owed.0, 350 * D, "every coin received is in a pot or owed");
+}
+
+#[test]
+fn a_gift_through_intents_to_a_late_pot_is_owed_to_the_giver() {
+    let mut c = setup();
+    let id = new_family_pot(&mut c);
+    assert_eq!(add_via(&mut c, id, uncle(), 100 * D, "purpose", 61), 0);
+    assert_eq!(c.get_pot(id).unwrap().raised.0, 0);
+    assert_eq!(c.get_owed(uncle()).0, 100 * D);
+    at(uncle(), 62);
+    let _ = c.withdraw_owed();
+    assert_eq!(c.get_owed(uncle()).0, 0);
+}
+
+#[test]
+fn a_gift_through_intents_to_a_missing_pot_or_bad_part_is_owed_to_the_giver() {
+    let mut c = setup();
+    let id = new_family_pot(&mut c);
+    assert_eq!(add_via(&mut c, 99, uncle(), 10 * D, "purpose", 1), 0);
+    assert_eq!(add_via(&mut c, id, uncle(), 5 * D, "lunch", 1), 0);
+    assert_eq!(c.get_owed(uncle()).0, 15 * D);
+    assert_eq!(c.get_pot(id).unwrap().raised.0, 0);
+}
+
+#[test]
+fn a_gift_through_intents_can_fill_the_free_part() {
+    let mut c = setup();
+    let id = new_family_pot(&mut c);
+    assert_eq!(add_via(&mut c, id, uncle(), 60 * D, "free", 1), 0);
+    assert_eq!(c.get_pot(id).unwrap().free_sent.0, 50 * D);
+    assert_eq!(c.get_owed(uncle()).0, 10 * D);
+}
+
+#[test]
+#[should_panic(expected = "This contract only accepts its own stablecoin")]
+fn a_go_between_cannot_bypass_the_token_check() {
+    let mut c = setup();
+    let id = new_family_pot(&mut c);
+    at(intents(), 1);
+    let _ = c.ft_on_transfer(intents(), U128(D), format!(r#"{{"pot_id":{id},"giver":"{}"}}"#, uncle()));
+}

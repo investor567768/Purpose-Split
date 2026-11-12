@@ -1,0 +1,50 @@
+{
+  "contract": "pots.purposesplit.testnet",
+  "go_between": "intents-relay.purposesplit.testnet",
+  "pot": 7,
+  "giver": "uncle-femi.purposesplit.testnet",
+  "checks": {
+    "credited_to_uncle": true,
+    "go_between_not_a_giver": true,
+    "extra_kept_for_uncle": true
+  },
+  "books_match": true,
+  "steps": [
+    {
+      "title": "The stand-in go-between registers with tUSD",
+      "ok": true,
+      "tx": "4Pq59XmTFHC23Pz3m59rztayYvuEgMWYoHNTnLpMeNDp",
+      "url": "https://testnet.nearblocks.io/txns/4Pq59XmTFHC23Pz3m59rztayYvuEgMWYoHNTnLpMeNDp"
+    },
+    {
+      "title": "The stand-in go-between gets test dollars",
+      "ok": true,
+      "tx": "G7wm9KFNb7sbDbcd9YKSdJXxNTRu4peHxwxeHt2qvWCg",
+      "url": "https://testnet.nearblocks.io/txns/G7wm9KFNb7sbDbcd9YKSdJXxNTRu4peHxwxeHt2qvWCg"
+    },
+    {
+      "title": "A parent opens a box for the school fees",
+      "ok": true,
+      "tx": "5f8MJ9CfbmvQtm8Ra6YqapZ1Ewh1cCApnyW57YSdHtnQ",
+      "url": "https://testnet.nearblocks.io/txns/5f8MJ9CfbmvQtm8Ra6YqapZ1Ewh1cCApnyW57YSdHtnQ"
+    },
+    {
+      "title": "The go-between delivers 150 for the uncle abroad, naming him as the giver",
+      "ok": true,
+      "tx": "EuTCtLdqPspnBHXjdaKC8zPBNwy6Qyb9xmYyeEHRf6xw",
+      "url": "https://testnet.nearblocks.io/txns/EuTCtLdqPspnBHXjdaKC8zPBNwy6Qyb9xmYyeEHRf6xw"
+    },
+    {
+      "title": "The go-between delivers 100 more; only 50 fits",
+      "ok": true,
+      "tx": "4L4SNAdQFUKMp8oeokQTs2ojzBvu42nCHVJWGXEEqnJT",
+      "url": "https://testnet.nearblocks.io/txns/4L4SNAdQFUKMp8oeokQTs2ojzBvu42nCHVJWGXEEqnJT"
+    },
+    {
+      "title": "The uncle withdraws the 50 that didn't fit",
+      "ok": true,
+      "tx": "DBkRKd8th1oRXP7z9a86DXbM72xBsrrCf5UBixSVoRBg",
+      "url": "https://testnet.nearblocks.io/txns/DBkRKd8th1oRXP7z9a86DXbM72xBsrrCf5UBixSVoRBg"
+    }
+  ]
+}

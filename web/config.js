@@ -4,7 +4,7 @@
 export const RPCS = ["https://test.rpc.fastnear.com", "https://rpc.testnet.near.org"];
 export const EXPLORER = "https://testnet.nearblocks.io";
 export const ROOT = "purposesplit.testnet";
-export const POTS = `pots-dev7.${ROOT}`;
+export const POTS = `pots.${ROOT}`;
 // The two Sputnik DAOs, made with NEAR's own DAO factory.
 export const DAO_FACTORY = "sputnik-v2.testnet";
 export const COUNCIL_DAO = `purposesplit-council.${DAO_FACTORY}`; // votes payees onto the verified list
@@ -128,12 +128,12 @@ export const CHEATS = {
 // and confirm payments on the money-box contract: it cannot move any money. They
 // are published on purpose so any visitor can "play the school" on testnet.
 export const DEMO_KEYS = {
-  "llu.purposesplit.testnet": "ed25519:go8tVDuqke54iFj7AFSuumPRJMTQCrHUPwKbjMJrTgxu29zta2H2mkhMkQCKMMDAzu6DhY9ozdGaFZd5uDtXcKe",
-  "sparks.purposesplit.testnet": "ed25519:27rv5BsaeRf12afm1vk9mo3YR7MoAguvphEPJhRYzEVETCRqtkoEiVFTdkVcmvjMY69cJ9pdUqNVLuRH6ANtaHdX",
-  "lagoonheights.purposesplit.testnet": "ed25519:55S8yBDjLmRnTfZNBkfNfbq2y2dGGqeZABcmxSkjSqbH4XoyjZh7bEjRhVUbaAZXyWEP2sMtqwtfsen5qTm83yAZ",
-  "cornercare.purposesplit.testnet": "ed25519:7hgZNRyuTDqEiartE9ML9YMCiadQRGsJTt9og6r9NguQdVp9zaR8uLeGBjEPkQRtREQAyYH2hnqy1x7sz9XzrhG",
-  "campusbooks.purposesplit.testnet": "ed25519:3TgQHVsdE4DfhrxZtvew9D8pqNFTb8GfV2S9zyPq9gfPfjceikoYYetDRc3WE1amkRrUKycLpHfJJA5idg3xgcMv",
-  "lagoonhostel.purposesplit.testnet": "ed25519:5TSwqzZwsBN6ZMZMeS6uEjt96TA1AeorHpc9Ws7LEJpqGHV5EAGP7UXArj7ttJDVo9XJaJ6Wxh6CAoUbxHzTTWtz"
+  "llu.purposesplit.testnet": "ed25519:4Zj5Fzj9e2uZ1i4LQviuHFXnGyet6gSgw58fedxxPN3CoJ4YdwBxD2AvopJCpTNSgfgpUDpie22CPq4wUCgoWxhw",
+  "sparks.purposesplit.testnet": "ed25519:fF81kCm5rdidpzdRNKqFqmfhjSAPBDLP2HBJD71eihbFJer1RMquLMrmNkWnnQKgY4txBEvKFYtdpC1BexibPXB",
+  "lagoonheights.purposesplit.testnet": "ed25519:5pKNk4YHifpbTZurBu5fXkqLwJPKdqrSqnc7yoz21BRgVGt5wt3LyFFZsfCY68K7KXkTM1URsYND4YquUAHEFSvR",
+  "cornercare.purposesplit.testnet": "ed25519:2WmaWue1kTJ9pyr9FKN1TUmkPBYiMsNyfR6t4VKFjBEkGL5TKmQ6j8XEQV6CoTDALw6CC1jThe92mDg1G7xW6DB4",
+  "campusbooks.purposesplit.testnet": "ed25519:5rkHaYwxfgpaCEzZPbynXK2869omErs3fjuS4eXtaemXTcKWKFazvQQWCewyfLXASh4z7Maits3yJ2N4nWnpS3tq",
+  "lagoonhostel.purposesplit.testnet": "ed25519:58WTaEfjWt4Z9qiX1vFCcht4zefky483QXTPa1Dy1VDkGNj81MpLTxGdsgLsdpvmmy9MM7nWiZ8wX2FzR15223FZ"
 };
 
 export const STORAGE_DEPOSIT = "1250000000000000000000"; // 0.00125 NEAR, to register with the token
