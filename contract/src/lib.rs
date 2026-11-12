@@ -428,6 +428,21 @@ impl Contract {
         );
     }
 
+    /// Hands control of the verified list to another account, normally the
+    /// council's Sputnik DAO. Only the current holder can do this. A deployment
+    /// seeds its first payees from a plain account, then hands the list to the
+    /// DAO, after which only a DAO vote can add, remove or hand it on again.
+    pub fn set_registry_dao(&mut self, account_id: AccountId) {
+        let caller = env::predecessor_account_id();
+        require!(caller == self.registry_dao, "Only the registry DAO can hand over the verified list");
+        require!(account_id != self.registry_dao, "That account already holds the verified list");
+        event(
+            "registry_handed_over",
+            serde_json::json!({ "from": caller, "to": account_id }),
+        );
+        self.registry_dao = account_id;
+    }
+
     // -------------------------------------------------------------------- pots
 
     /// Creates a pot. Attach about 0.1 NEAR for storage; the unused part is refunded.

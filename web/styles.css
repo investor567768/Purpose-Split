@@ -814,3 +814,16 @@ body.menu-on { overflow: hidden; }
 /* v8.1: account names are for checking, so they sit quietly under the role. */
 a.acct { color: var(--print-soft); font-size: 0.8rem; font-weight: 400; text-decoration-color: rgba(31, 92, 76, 0.3); word-break: break-all; }
 a.acct:hover { color: var(--ink); }
+
+/* v8.2: payees, council votes, records. */
+.payee-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 24px; }
+.payee p { margin: 4px 0; }
+.mine-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 24px; }
+.bills { margin: 8px 0; padding-left: 18px; display: grid; gap: 4px; font-size: var(--fs-small); }
+.votes { list-style: none; margin: 0; padding: 0; display: grid; gap: 20px; max-width: 760px; }
+.vote h3 { font-size: 1.1rem; }
+.vote .stamp { margin-right: 8px; vertical-align: middle; }
+.vote--approved { border-left: 4px solid var(--print); }
+.vote--inprogress { border-left: 4px solid var(--violet); }
+.cta--small { margin-top: 10px; }
+.cta--small .button { font-size: var(--fs-small); padding: 8px 14px; }

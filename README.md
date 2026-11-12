@@ -8,7 +8,11 @@ Purpose Split is a money box on NEAR. Money raised for a purpose can only reach 
 
 **Try it:** [purpose-split-web.vercel.app](https://purpose-split-web.vercel.app) (NEAR testnet, test dollars with no value)
 
-Tracks: Social Money and Real-World Money.
+## Why it fits the two tracks
+
+**Social Money: coordinate value together.** A money box is a shared budget with rules. Families and neighbours put money in together, and a **Sputnik DAO** decides what only a group should decide: the street's neighbours vote to pay the electrician, and the school-list council votes payees onto the verified list. Everyone is a **named account** (`llu.purposesplit.testnet`, not `0x7a3f…`), and a pass gives reputation-based access: proof of paid fees that an exam hall or a hostel gate can check.
+
+**Real-World Money: bring the boring money onchain.** It is money sent home for a purpose (Nigerians abroad sent about $22.8 billion in 2025), paid only against **invoices** the payee sends, with a status anyone can trust (billed → paid → confirmed, each with a transaction link) and a **CSV export** for every box that a bursar or a family can open in a spreadsheet. The money is a standard NEAR token (NEP-141), so a stablecoin such as USDC drops in where the test dollars are now.
 
 ## The problem
 
@@ -37,20 +41,41 @@ One box can pay up to three payees, each only against its own bills: a student's
 
 These are examples. The same rules work for any purpose with a named payee: rent, a wedding, a funeral, a group purchase.
 
-## Status (10 Nov)
+## Try it yourself (no wallet needed for the first three)
 
-- The money box contract and the test-dollar token are written, with 85 tests covering every rule, every cheating attempt and the pass.
-- Three demo stories ran on testnet: 61 steps, all 18 cheating attempts refused (including faking a pass and giving one away), and the books balance. See `proof/demo-dev.json` for every transaction link.
-- The website is live, with wallet sign-in, "Try to cheat" against the real contract, three example money boxes and a form to start your own.
-- Next: the two Sputnik DAOs and the final, locked deployment.
+1. **Try to cheat.** Open the [homepage](https://purpose-split-web.vercel.app), choose "The student" and "A betting site", press **Try it** → *Refused: "A betting site is not on the verified list. This money box pays only Lagos Lagoon University."* The answer comes from the contract's own `why_refused` view, live.
+2. **Check a pass.** Menu → **Check a pass** → `tolu.purposesplit.testnet` → *a "Fees paid: Lagos Lagoon University" pass, 280 tUSD, confirmed by the school.*
+3. **See a vote.** Menu → **Payees** → *the verified list held by `purposesplit-council.sputnik-v2.testnet`, and proposal 0 to add Unity Hall Caterers, waiting for its second councillor.*
+4. **Do it for real.** Sign in with a testnet wallet (Meteor or MyNearWallet), press **Get 500 test dollars** on **How to try it**, start a money box naming Lagos Lagoon University, give to it, then use **Play Lagos Lagoon University** to send a bill, pay it, and confirm it. Menu → **Check a pass** → your account → *your own "Fees paid" pass.*
+5. **Keep the records.** On any box, press **Download for your records (CSV)** → *every gift, bill, payment and confirmation, with dates and amounts.*
+
+## Check every claim yourself
+
+| Claim | How to check |
+|---|---|
+| The money can only reach the payees on the box | "Try to cheat" on any open box; the 20 refused attempts in `proof/demo-dev.json`, each with its transaction |
+| Only a vote of the street can pay from the street's box | Box 4's "Who presses pay" is `adeyemi-street.sputnik-v2.testnet`; in the test run the chairman's direct attempt is refused, and even a passed vote that tries to pay the chairman is refused by the contract |
+| Nobody adds a payee alone | `get_config().registry_dao` is `purposesplit-council.sputnik-v2.testnet`; the deployer's attempt after the handover is refused in the test run |
+| A pass cannot be faked, sold or lent | Tolu confirming his own payment and Tolu giving his pass away are both refused in the test run; `nft_transfer` always refuses |
+| The books balance | The test run ends with the contract's token balance equal to what its boxes hold plus what it owes |
+| Every rule has a test | `cargo test`: 88 tests |
+
+## Status (11 Nov)
+
+- The money box contract and the test-dollar token: 88 tests covering every rule, every cheating attempt, the pass and the handover to the council.
+- The two Sputnik DAOs are live, made with NEAR's own DAO factory: the school-list council ([`purposesplit-council.sputnik-v2.testnet`](https://testnet.nearblocks.io/address/purposesplit-council.sputnik-v2.testnet)), with one real person on it, and the street ([`adeyemi-street.sputnik-v2.testnet`](https://testnet.nearblocks.io/address/adeyemi-street.sputnik-v2.testnet)), with five neighbours.
+- The full test run on the practice contract (`pots-dev7.purposesplit.testnet`): 85 steps, all 20 cheating attempts refused, real DAO proposals and votes, and the books balance. Every step and its transaction is in `proof/demo-dev.json` and on the website's Proof page.
+- The website is live: wallet sign-in, "Try to cheat" against the real contract, example money boxes, starting your own, the Payees page (bills, verified list, council votes, proposing a payee), passes and CSV records.
+- Next: deploy the final contract and lock it by deleting its keys, so nobody can change the rules.
 
 ## Try it from the command line
 
 ```bash
-cargo test                      # 85 tests: every rule, every cheat, the pass
+cargo test                      # 88 tests: every rule, every cheat, the pass, the handover
 cd scripts && npm install
 ./build.sh                      # builds both contracts into build/
-node demo.mjs dev               # runs both stories on testnet (needs testnet keys)
+node daos.mjs                   # the two Sputnik DAOs (already made; safe to run again)
+node demo.mjs dev               # the three stories on testnet, with real DAO votes (needs testnet keys)
 ```
 
 ## Layout
@@ -64,8 +89,14 @@ proof/        transaction links from demo runs
 
 ## Honest limitations
 
-- Test dollars only. A real launch would use USDC and a naira on-ramp.
-- Schools and vendors do not have NEAR accounts today. The demo uses made-up ones.
-- The contract has not been audited.
+- **Test dollars only.** A real launch would use USDC on NEAR and a naira on-ramp.
+- **The payees are made up.** No school in Nigeria has a NEAR account today, so the schools, hospital, pharmacy, electrician and people in the demo are invented, and their evidence links use the reserved `.example` domain. The rules, the votes and the money movements are real.
+- **One council seat is held by the build,** so the test run can cast the first vote. The second seat is a real person's wallet, and the build holds no key for it, so nothing passes without that person's vote.
+- **Not audited.** Built and tested in a hackathon.
+- **Not built yet:** paying in from any chain through NEAR Intents (relatives abroad paying in what they already hold), and gasless confirmations for payees through meta transactions. Both fit; neither is here yet.
+
+## Built with
+
+Written during the NEAR Hackathon, November 2026. Uses near-sdk and near-contract-standards (NEP-141, NEP-145, NEP-171, NEP-297), Sputnik DAO through NEAR's DAO factory, near-api-js, NEAR Wallet Selector, and the Archivo font (SIL Open Font License).
 
 License: MIT

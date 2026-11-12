@@ -2,10 +2,10 @@
 // browser. "Try to cheat" asks the contract's own `why_refused` check, so the
 // answers on screen are the contract's words, not ours.
 
-import { CHEATS, EXPLORER, LIVE, PEOPLE, POTS, RPCS, ROOT, SAY, STORY, SPLIT, TOKEN, GITHUB } from "./config.js";
+import { CHEATS, COUNCIL_DAO, EXPLORER, LIVE, PEOPLE, POTS, RPCS, ROOT, SAY, STORY, SPLIT, TOKEN, GITHUB } from "./config.js";
 import {
   canPlay, closeBox, confirmPayment, createBox, currentAccount, explain, getTestDollars, give,
-  loadWallet, onAccountChange, payBill, playPayee, sendBill, signIn, signOut,
+  loadWallet, onAccountChange, payBill, playPayee, proposePayee, sendBill, signIn, signOut, voteOnCouncil,
 } from "./act.js";
 
 const main = document.getElementById("main");
@@ -156,7 +156,7 @@ const IDEAS = {
   ],
 };
 
-function cheatSlip(storyKey = "family", { heading = "h2", tabs = true } = {}) {
+function cheatSlip(storyKey = "family", { heading = "h2", tabs = true, whose = "demo" } = {}) {
   const id = `cheat-${Math.random().toString(36).slice(2, 8)}`;
   return `
   <form class="slip" id="${id}" data-story="${storyKey}" aria-describedby="${id}-hint">
@@ -164,8 +164,10 @@ function cheatSlip(storyKey = "family", { heading = "h2", tabs = true } = {}) {
       <${heading}>Try to cheat</${heading}>
       <span class="slip__no" data-potno></span>
     </div>
-    <p class="live-stamp"><span>Live on NEAR</span> Nothing here is simulated. Each answer comes from the real contract.</p>
-    <p class="small" id="${id}-hint">Pick a person and what they try. Asking is free, and no money moves.</p>
+    ${whose === "demo"
+      ? `<p class="live-stamp"><span>Demo box, real rules</span> The people here are made up, and no money moves. But each answer comes from the real contract on NEAR, the same check it runs before every real payment.</p>`
+      : `<p class="live-stamp"><span>${whose === "yours" ? "Your box" : "This box"}, real rules</span> No money moves when you try. Each answer comes from the real contract on NEAR, the same check it runs before every real payment.</p>`}
+    <p class="small" id="${id}-hint">Pick a person and what they try. Asking is free.</p>
     ${tabs ? `<div class="switch" role="group" aria-label="Which money box">
       <button type="button" data-story-btn="family">School fees</button>
       <button type="button" data-story-btn="street">Street fund</button>
@@ -850,6 +852,8 @@ async function potPage(id) {
   const group = p.kind === "Group";
   const only = either(p.payees.map(payeeName));
   const hasFree = BigInt(p.free_target) > 0n;
+  const payeesLink = `${location.origin}${location.pathname}#/payees`;
+  const askText = `Hello. There is a money box for "${titleOf(p)}" on Purpose Split, holding ${money(p.held)}, and it can only pay ${either(p.payees.map(payeeName))}. To be paid, please sign in with your NEAR account and send a bill here: ${payeesLink}  The box itself: ${location.href}`;
   const shareText = `${p.id === LIVE.appeal ? "Give to a cause, not to a person. " : ""}${titleOf(p)}. The money can only go to ${only}${hasFree ? `, plus ${money(p.free_target)} for ${p.free_label.toLowerCase()} sent to ${nameOf(p.free_to)}` : ""}. Whatever isn't used goes back to the givers. See it live: ${location.href}`;
   const target = BigInt(p.target) || 1n;
   const pct = (v) => `${Number((BigInt(v) * 10000n) / target) / 100}%`;
@@ -875,6 +879,10 @@ async function potPage(id) {
     <p class="cta">
       <a class="button" href="https://wa.me/?text=${encodeURIComponent(shareText)}" target="_blank" rel="noopener">Share on WhatsApp</a>
       <button class="button button--quiet" type="button" data-copy>Copy the link</button>
+    </p>
+    <p class="cta cta--small">
+      ${p.status === "Open" && !p.deadline_passed ? `<a class="button button--quiet" href="https://wa.me/?text=${encodeURIComponent(askText)}" target="_blank" rel="noopener">Ask ${esc(p.payees.length === 1 ? payeeName(p.payees[0]) : "the payee")} to send a bill</a>` : ""}
+      <button class="button button--quiet" type="button" data-csv>Download for your records (CSV)</button>
     </p>
   </section>
   <div class="pot-grid">
@@ -928,9 +936,10 @@ async function potPage(id) {
       </section>
     </div>
   </div>
-  ${cheatKey || ownCheat ? `<section class="section" aria-label="Try to cheat this box"><div class="pot-grid">${cheatSlip(cheatKey || "own", { heading: "h2", tabs: false })}<aside class="prose"><h3>Try to spend this box's money on something else</h3><p>Pick who is trying and where they send the money. The real contract on NEAR answers, with its reason. Nothing is sent and no wallet is needed.</p></aside></div></section>` : ""}`;
+  ${cheatKey || ownCheat ? `<section class="section" aria-label="Try to cheat this box"><div class="pot-grid">${cheatSlip(cheatKey || "own", { heading: "h2", tabs: false, whose: p.creator.endsWith(`.${ROOT}`) ? "demo" : p.creator === currentAccount() ? "yours" : "this" })}<aside class="prose"><h3>Try to spend this box's money on something else</h3><p>Pick who is trying and where they send the money. The real contract on NEAR answers, with its reason. Nothing is sent and no wallet is needed.</p></aside></div></section>` : ""}`;
   if (cheatKey || ownCheat) wireCheat(main.querySelector("form[data-story]"), ownCheat || undefined);
   renderActions(p);
+  main.querySelector("[data-csv]").addEventListener("click", () => downloadCsv(p));
   const copy = main.querySelector("[data-copy]");
   copy.addEventListener("click", async () => {
     try {
@@ -1155,6 +1164,262 @@ function tryPage() {
   draw();
 }
 
+// ------------------------------------------------------------------ payees
+
+const KINDS = { School: "School", Hospital: "Hospital", Vendor: "Shop or service", Other: "Other" };
+const nearAmount = (yocto) => `${(Number(BigInt(yocto) / 10n ** 21n) / 1000).toLocaleString("en-US", { maximumFractionDigits: 3 })} NEAR`;
+
+/** Reads what a council proposal asks for, if it is a call to add or remove a payee. */
+function readProposal(x) {
+  const call = x.kind && x.kind.FunctionCall;
+  const a = call && call.receiver_id === POTS && call.actions && call.actions[0];
+  if (!a) return { what: x.description, payee: null };
+  let args = {};
+  try { args = JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(a.args), (ch) => ch.charCodeAt(0)))); } catch {}
+  if (a.method_name === "add_payee") return { what: `Add ${undemo(args.name)} to the verified list`, payee: args };
+  if (a.method_name === "remove_payee") return { what: `Remove ${nameOf(args.account_id)} from the verified list`, payee: args };
+  if (a.method_name === "set_registry_dao") return { what: `Hand the verified list to ${args.account_id}`, payee: null };
+  return { what: x.description, payee: null };
+}
+
+async function payeesPage() {
+  setTitle("Payees");
+  markNav("payees");
+  main.innerHTML = `
+  <section class="page-head">
+    <h1>Payees</h1>
+    <p class="lead">A money box can only pay accounts on the verified list. Nobody adds to that list alone: a payee is proposed with evidence, and the school-list council votes on it. Everything here is read live from NEAR.</p>
+    <p class="cta">
+      <a class="button" href="#mine-h">I'm a school or payee</a>
+      <a class="button button--quiet" href="#propose-h">Propose a payee</a>
+    </p>
+  </section>
+
+  <section class="section" aria-labelledby="mine-h">
+    <h2 id="mine-h">For schools and payees</h2>
+    <p class="lead">Sign in with the payee's account to see every money box that names you, send bills and confirm payments.</p>
+    <div data-mine><p class="loading">Reading the contract…</p></div>
+  </section>
+
+  <section class="section" aria-labelledby="list-h">
+    <h2 id="list-h">The verified list</h2>
+    <p class="small" data-holder></p>
+    <div class="payee-list" data-list><p class="loading">Reading the contract…</p></div>
+  </section>
+
+  <section class="section" aria-labelledby="votes-h">
+    <h2 id="votes-h">Council votes</h2>
+    <p class="lead">Every proposal and every vote, from the council's own Sputnik DAO. A proposal passes when more than half of the council says yes, and then the DAO itself adds the payee.</p>
+    <p class="small" data-council></p>
+    <div data-votes><p class="loading">Reading the council's DAO…</p></div>
+  </section>
+
+  <section class="section" aria-labelledby="propose-h">
+    <h2 id="propose-h">Propose a payee</h2>
+    <div class="pot-grid">
+      <form class="slip form" data-propose novalidate>
+        <div class="slip__head"><h3>New payee</h3><span class="slip__no">Goes to a council vote</span></div>
+        <label class="field"><span class="field__label">Name</span><input name="name" maxlength="60" required placeholder="Unity Grammar School"></label>
+        <label class="field"><span class="field__label">Their NEAR account</span><input name="account" required autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="unitygrammar.testnet"></label>
+        <label class="field"><span class="field__label">What they are</span><select name="kind">${Object.entries(KINDS).map(([k, v]) => `<option value="${k}">${v}</option>`).join("")}</select></label>
+        <label class="field"><span class="field__label">Evidence: a link where they publish this account themselves</span><input name="evidence" required type="url" placeholder="https://unitygrammar.edu.ng/pay-fees"></label>
+        <p class="small" data-bond>Proposing needs a small bond in NEAR, which comes back when the proposal passes.</p>
+        <button class="button" type="submit">Send to the council</button>
+        <p class="small" data-msg aria-live="polite"></p>
+      </form>
+      <aside class="prose">
+        <h3>Why a vote?</h3>
+        <p>The money box only promises that money reaches the accounts on this list. If anyone could add an account, a cheat could add their own and call it a school. So every addition needs evidence and a council vote.</p>
+        <h3>What counts as evidence?</h3>
+        <p>A page the payee controls that shows this exact account: the school's fees page, an official letter, a verified social profile. The council checks it before voting.</p>
+      </aside>
+    </div>
+  </section>`;
+
+  const me = currentAccount();
+  const [cfg, payeesRes, potsRes] = await Promise.all([
+    view(POTS, "get_config").catch(() => null),
+    view(POTS, "get_payees", { from_index: 0, limit: 100 }).catch(() => null),
+    view(POTS, "get_pots", { from_index: 0, limit: 100 }).catch(() => null),
+  ]);
+  if (!document.body.contains(main.querySelector("[data-list]"))) return;
+  const payees = payeesRes ? payeesRes.value : [];
+  const pots = potsRes ? potsRes.value : [];
+  const holder = cfg && cfg.value.registry_dao;
+
+  main.querySelector("[data-holder]").innerHTML = holder
+    ? `The list is held by ${holder === COUNCIL_DAO ? "the school-list council's DAO" : esc(nameOf(holder))}: ${acct(holder)}. Nobody else can change it.`
+    : "";
+  main.querySelector("[data-list]").innerHTML = payees.length
+    ? payees.map((x) => `<article class="slip payee">
+        <div class="slip__head"><h3>${esc(payeeName(x))}</h3><span class="slip__no">${esc(KINDS[x.kind] || x.kind)}</span></div>
+        <p class="small">${acct(x.account_id)}</p>
+        <p class="small">${evidenceLine(x)}</p>
+        <p class="small">On the list since ${when(x.added_at_ns)}</p>
+      </article>`).join("")
+    : `<p>The list is empty.</p>`;
+
+  // For payees: the boxes that name the signed-in account.
+  const mine = main.querySelector("[data-mine]");
+  const isPayee = me && payees.some((x) => x.account_id === me);
+  if (!me) {
+    mine.innerHTML = `<p><button class="button button--quiet" type="button" data-signin>Sign in</button></p>
+      <p class="small">Trying it out? Open any example money box and use "Play the school" instead: it acts as the made-up school with a limited key.</p>`;
+    mine.querySelector("[data-signin]").addEventListener("click", () => signIn());
+  } else if (!isPayee) {
+    mine.innerHTML = `<p><strong>${esc(me)}</strong> is not on the verified list, so no money box can pay it yet.</p>
+      <p class="small">If this is a school's or a business's account, <a href="#propose-h">propose it to the council</a> with a link to where it publishes this account.</p>`;
+  } else {
+    const named = pots.filter((p) => p.payees.some((x) => x.account_id === me));
+    const waiting = named.reduce((a, p) => a + (p.status === "Open" ? BigInt(p.held) : 0n), 0n);
+    mine.innerHTML = named.length
+      ? `<p class="kicker">${named.length} money ${named.length === 1 ? "box names" : "boxes name"} you · ${money(waiting)} waiting in open boxes</p>
+         <div class="mine-list">${named.slice().reverse().map((p) => payeeBox(p, me)).join("")}</div>`
+      : `<p>No money box names <strong>${esc(me)}</strong> yet. When a family or a group starts one for you, it shows up here.</p>`;
+    wirePayeeBoxes(mine, me);
+  }
+
+  // Council votes.
+  const votes = main.querySelector("[data-votes]");
+  try {
+    const [{ value: policy }, { value: last }] = await Promise.all([view(COUNCIL_DAO, "get_policy"), view(COUNCIL_DAO, "get_last_proposal_id")]);
+    const council = (policy.roles.find((x) => x.kind && x.kind.Group) || { kind: { Group: [] } }).kind.Group;
+    const bond = policy.proposal_bond;
+    main.querySelector("[data-bond]").textContent = `Proposing needs a bond of ${nearAmount(bond)}, which comes back when the proposal passes.`;
+    main.querySelector("[data-council]").innerHTML = `The council: ${council.map((m) => `${esc(nameOf(m))} ${acct(m)}`).join(", ")}. DAO: ${acct(COUNCIL_DAO)}.`;
+    const from = Math.max(0, last - 20);
+    const { value: proposals } = last ? await view(COUNCIL_DAO, "get_proposals", { from_index: from, limit: 20 }) : { value: [] };
+    const amCouncillor = me && council.includes(me);
+    votes.innerHTML = proposals.length
+      ? `<ol class="votes">${proposals.slice().reverse().map((x) => {
+          const { what, payee } = readProposal(x);
+          const yes = Object.values(x.votes || {}).filter((v) => v === "Approve").length;
+          const no = Object.values(x.votes || {}).filter((v) => v === "Reject").length;
+          const mineVoted = me && x.votes && x.votes[me];
+          const open = x.status === "InProgress";
+          return `<li class="slip vote vote--${esc(x.status.toLowerCase())}">
+            <div class="slip__head"><h3>${esc(what)}</h3><span class="slip__no">Proposal ${x.id}</span></div>
+            ${payee && payee.evidence ? `<p class="small">Evidence: <a href="${esc(payee.evidence)}" target="_blank" rel="noopener">${esc(payee.evidence)}</a> · account ${acct(payee.account_id)}</p>` : ""}
+            <p><span class="stamp stamp--small ${x.status === "Approved" ? "stamp--ok" : open ? "" : "stamp--no"}">${esc({ InProgress: "Voting", Approved: "Passed", Rejected: "Rejected", Removed: "Removed", Expired: "Expired", Failed: "Failed" }[x.status] || x.status)}</span>
+              ${yes} yes · ${no} no · of ${council.length} councillors · proposed by ${acct(x.proposer)}</p>
+            ${open && amCouncillor && !mineVoted ? `<p class="cta"><button class="button" type="button" data-vote="VoteApprove" data-id="${x.id}">Vote yes</button><button class="button button--quiet" type="button" data-vote="VoteReject" data-id="${x.id}">Vote no</button></p>` : ""}
+            ${open && amCouncillor && mineVoted ? `<p class="small">You voted ${mineVoted === "Approve" ? "yes" : "no"}.</p>` : ""}
+            <p class="small" data-vote-msg="${x.id}" aria-live="polite"></p>
+          </li>`;
+        }).join("")}</ol>`
+      : `<p>No proposals yet.</p>`;
+    votes.querySelectorAll("[data-vote]").forEach((btn) => btn.addEventListener("click", async () => {
+      const id = Number(btn.dataset.id);
+      const x = proposals.find((p) => p.id === id);
+      const msg = votes.querySelector(`[data-vote-msg="${id}"]`);
+      votes.querySelectorAll(`[data-id="${id}"]`).forEach((b) => (b.disabled = true));
+      msg.textContent = "Confirm your vote in your wallet…";
+      try {
+        await voteOnCouncil(id, btn.dataset.vote, x.kind);
+        msg.textContent = "Vote recorded on NEAR.";
+        setTimeout(() => payeesPage(), 1500);
+      } catch (err) {
+        msg.textContent = explain(err);
+        votes.querySelectorAll(`[data-id="${id}"]`).forEach((b) => (b.disabled = false));
+      }
+    }));
+
+    // Propose a payee.
+    const form = main.querySelector("[data-propose]");
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const d = Object.fromEntries(new FormData(form));
+      const msg = form.querySelector("[data-msg]");
+      const account = String(d.account || "").trim().toLowerCase();
+      const problem = !String(d.name || "").trim() ? "Give the payee's name."
+        : !ACCOUNT_RE.test(account) ? "Type a NEAR account name, like unitygrammar.testnet."
+        : !/^https:\/\/\S+$/.test(String(d.evidence || "").trim()) ? "The evidence must be an https link."
+        : payees.some((x) => x.account_id === account) ? "That account is already on the verified list."
+        : "";
+      if (problem) { msg.textContent = problem; return; }
+      if (!currentAccount()) { msg.textContent = "Sign in first, then send it to the council."; signIn(); return; }
+      msg.textContent = "Confirm the proposal in your wallet…";
+      try {
+        await proposePayee({ account_id: account, name: String(d.name).trim(), kind: d.kind, evidence: String(d.evidence).trim() }, bond);
+        msg.textContent = "Sent. The council can now vote on it below.";
+        setTimeout(() => payeesPage(), 1500);
+      } catch (err) {
+        msg.textContent = explain(err);
+      }
+    });
+  } catch {
+    votes.innerHTML = `<p class="error">Couldn't reach the council's DAO just now.</p>`;
+  }
+}
+
+/** One money box, as the payee sees it: what is waiting, its bills, what to confirm. */
+function payeeBox(p, me) {
+  const open = p.status === "Open" && !p.deadline_passed;
+  const myBills = p.requests.filter((x) => x.payee === me);
+  const toConfirm = p.payments.map((x, i) => ({ ...x, i })).filter((x) => x.to === me && !x.confirmed);
+  return `<article class="slip" data-box="${p.id}">
+    <div class="slip__head"><h3><a href="#/pot/${p.id}">${esc(titleOf(p))}</a></h3><span class="slip__no">No. ${p.id}</span></div>
+    ${field("In the box now", money(p.held))}
+    ${field("Who presses pay", esc(p.kind === "Group" ? "A vote of the group" : nameOf(p.releaser)))}
+    ${myBills.length ? `<ul class="bills">${myBills.map((x) => `<li>${money(x.amount)} · ${esc(x.note || "no note")} · <strong>${esc({ Open: "waiting to be paid", Paid: "paid", Cancelled: "cancelled" }[x.status] || x.status)}</strong></li>`).join("")}</ul>` : ""}
+    ${toConfirm.map((x) => `<p><button class="button" type="button" data-confirm="${x.i}">Confirm you received ${money(x.amount)}</button></p>`).join("")}
+    ${open ? `<form class="mini" data-bill>
+      <label class="field"><span class="field__label">Send a bill</span><input name="amount" inputmode="decimal" placeholder="Amount in tUSD" required></label>
+      <label class="field"><span class="field__label">What it is for</span><input name="note" maxlength="80" placeholder="2026/27 session fees"></label>
+      <button class="button button--quiet" type="submit">Send the bill</button>
+    </form>` : `<p class="small">This box is ${p.status === "Open" ? "past its deadline" : "closed"}.</p>`}
+    <p class="small" data-msg aria-live="polite"></p>
+  </article>`;
+}
+
+function wirePayeeBoxes(root, me) {
+  root.querySelectorAll("[data-box]").forEach((box) => {
+    const id = Number(box.dataset.box);
+    const msg = box.querySelector("[data-msg]");
+    const run = async (label, fn) => {
+      box.querySelectorAll("button").forEach((b) => (b.disabled = true));
+      msg.textContent = `${label} Confirm it in your wallet…`;
+      try { await fn(); msg.textContent = "Done, on NEAR."; setTimeout(() => payeesPage(), 1500); }
+      catch (err) { msg.textContent = explain(err); box.querySelectorAll("button").forEach((b) => (b.disabled = false)); }
+    };
+    box.querySelectorAll("[data-confirm]").forEach((b) => b.addEventListener("click", () => run("Confirming.", () => confirmPayment(id, Number(b.dataset.confirm)))));
+    const form = box.querySelector("[data-bill]");
+    if (form) form.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const d = Object.fromEntries(new FormData(form));
+      const units = Math.round(Number(d.amount) * 1e6);
+      if (!Number.isFinite(units) || units <= 0) { msg.textContent = "Type an amount, like 280."; return; }
+      run("Sending the bill.", () => sendBill(id, units, String(d.note || "").trim()));
+    });
+  });
+}
+
+/** Everything about one box as rows a spreadsheet opens: gifts, bills, payments, refunds. */
+function boxCsv(p) {
+  const t = (ns) => (ns && ns !== "0" ? new Date(Number(BigInt(ns) / 1_000_000n)).toISOString().replace("T", " ").slice(0, 19) + " UTC" : "");
+  const amt = (v) => (Number(BigInt(v)) / 1e6).toFixed(2);
+  const rows = [["Money box", "Type", "Date", "Who", "Account", "Amount (tUSD)", "Status", "Note"]];
+  const box = `${p.id}: ${titleOf(p)}`;
+  rows.push([box, "Box created", t(p.created_at_ns), nameOf(p.creator), p.creator, amt(p.target), p.status, `Pays only ${p.payees.map((x) => payeeName(x)).join(" or ")}`]);
+  p.contributions.forEach((c) => rows.push([box, "Gift", "", nameOf(c.account_id), c.account_id, amt(c.amount), "Given", ""]));
+  if (BigInt(p.free_sent) > 0n) rows.push([box, `Free part: ${p.free_label}`, "", nameOf(p.free_to), p.free_to, amt(p.free_sent), "Sent", ""]);
+  p.requests.forEach((x) => rows.push([box, "Bill", t(x.at_ns), payeeName(p.payees.find((y) => y.account_id === x.payee) || { account_id: x.payee }), x.payee, amt(x.amount), x.status, x.note || ""]));
+  p.payments.forEach((x) => rows.push([box, "Payment", t(x.at_ns), payeeName(p.payees.find((y) => y.account_id === x.to) || { account_id: x.to }), x.to, amt(x.amount), x.confirmed ? `Confirmed by the payee ${t(x.confirmed_at_ns)}` : "Paid, not yet confirmed", x.pass_id ? `Pass ${x.pass_id}` : ""]));
+  if (BigInt(p.refunded) > 0n) rows.push([box, "Returned to givers", "", "", "", amt(p.refunded), "Returned", "In proportion to what each gave"]);
+  rows.push([box, "Still in the box", "", "", POTS, amt(p.held), "", `Read from ${POTS}`]);
+  return rows.map((r) => r.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(",")).join("\r\n");
+}
+
+function downloadCsv(p) {
+  const blob = new Blob(["﻿" + boxCsv(p)], { type: "text/csv;charset=utf-8" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `purpose-split-box-${p.id}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+}
+
 async function proofPage() {
   setTitle("Proof");
   markNav("proof");
@@ -1256,6 +1521,7 @@ function route() {
   if (parts[0] === "proof") return proofPage();
   if (parts[0] === "start") return startPage();
   if (parts[0] === "try") return tryPage();
+  if (parts[0] === "payees") return payeesPage();
   if (parts[0] === "pass") return passPage(parts[1] ? decodeURIComponent(parts[1]).toLowerCase() : "");
   if (parts[0] === "receipt" && /^\d+$/.test(parts[1] || "") && /^\d+$/.test(parts[2] || "")) return receiptPage(parts[1], parts[2]);
   return home();

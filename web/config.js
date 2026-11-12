@@ -4,7 +4,11 @@
 export const RPCS = ["https://test.rpc.fastnear.com", "https://rpc.testnet.near.org"];
 export const EXPLORER = "https://testnet.nearblocks.io";
 export const ROOT = "purposesplit.testnet";
-export const POTS = `pots-dev6.${ROOT}`;
+export const POTS = `pots-dev7.${ROOT}`;
+// The two Sputnik DAOs, made with NEAR's own DAO factory.
+export const DAO_FACTORY = "sputnik-v2.testnet";
+export const COUNCIL_DAO = `purposesplit-council.${DAO_FACTORY}`; // votes payees onto the verified list
+export const STREET_DAO = `adeyemi-street.${DAO_FACTORY}`; // the neighbours' vote pays the electrician
 export const TOKEN = `tusd.${ROOT}`;
 export const GITHUB = ""; // filled in once the repository is public
 
@@ -23,8 +27,11 @@ export const PEOPLE = {
   [s("uncle-femi")]: "A relative abroad",
   [s("tolu")]: "The student",
   [s("chairman")]: "The street chairman",
-  [s("street-dev")]: "The street's vote",
-  [s("registry-dev")]: "The school-list council",
+  [STREET_DAO]: "The street's vote",
+  [COUNCIL_DAO]: "The school-list council",
+  [s("registry-dev")]: "The deployer",
+  [s("council-seat")]: "A council seat held by the build",
+  ["chrysolitee.testnet"]: "Chrysolite, a councillor",
   [s("llu")]: "Lagos Lagoon University",
   [s("marinapoly")]: "Marina Polytechnic",
   [s("llu-bursary")]: "A lookalike of the school's account",
@@ -36,6 +43,7 @@ export const PEOPLE = {
   [s("cornercare")]: "Corner Care Pharmacy",
   [s("campusbooks")]: "Campus Books",
   [s("lagoonhostel")]: "Lagoon Hostel",
+  [s("unityhall")]: "Unity Hall Caterers",
   [s("emeka")]: "The organiser",
   [s("ngozi-family")]: "The patient's family",
   [s("resident1")]: "Neighbour, no. 3",
@@ -56,7 +64,7 @@ export const SAY = {
   [s("sureodds")]: "a betting site",
   [s("quicktrade")]: "a trading app",
   [s("chairman")]: "the chairman",
-  [s("street-dev")]: "the neighbours",
+  [STREET_DAO]: "the neighbours' vote",
   [s("sparks")]: "Sparks Electrical",
   [s("resident1")]: "one of the neighbours",
   [s("lagoonheights")]: "Lagoon Heights Hospital",
@@ -91,7 +99,7 @@ export const CHEATS = {
     amount: 100,
     signers: [
       { id: s("chairman"), label: "The chairman, on his own", next: "The chairman would now sign this payment with his own wallet." },
-      { id: s("street-dev"), label: "The neighbours, after their vote passed", next: "The street's DAO would now carry out the vote and make this payment." },
+      { id: STREET_DAO, label: "The neighbours, after their vote passed", next: "The street's DAO would now carry out the vote and make this payment." },
     ],
     destinations: [
       { id: s("chairman"), label: "The chairman's own wallet" },
@@ -120,12 +128,12 @@ export const CHEATS = {
 // and confirm payments on the money-box contract: it cannot move any money. They
 // are published on purpose so any visitor can "play the school" on testnet.
 export const DEMO_KEYS = {
-  "llu.purposesplit.testnet": "ed25519:49HMidsZcWnvjKveyuBURN6chpdp9U272Fkzaz2G5yUQ7ksQVVCc2a1zyoPpWnXgcyGSWUqnKqFkZDTDe6vFY7Pi",
-  "sparks.purposesplit.testnet": "ed25519:4vmc7HaUiNHjMxEV3z8TwYov9PmqgtDGxxxmYxx4Qv69hHYc1Nb62NoYvz8qGzaSdk3szxVBuj4BBgjW5GLgHRtK",
-  "lagoonheights.purposesplit.testnet": "ed25519:2XCugtb6iJ7ho2TxmDbmyr8d9RVMqvBXpLJj7U5bu2H5jFJkqAuWUdDFhUQdnECqxT1syuYtxuFAMufBKtWg41zg",
-  "cornercare.purposesplit.testnet": "ed25519:2iUBzzEYd4pF7vTyAKPW9vDoHMpNEEfbDdjDsb1w73uuCSBvKwCZ4GDAunXs3x5U1FMprrRytbLWrd75MFKCKxyx",
-  "campusbooks.purposesplit.testnet": "ed25519:5eHyaqpMz8j34fikxBPQk9Ev15TupT9A4H5uPFH2RZhRxGaMgTSwAXR9hYjbGgK98ApfbUqFPztgsHZ8H7zUvURB",
-  "lagoonhostel.purposesplit.testnet": "ed25519:5UXXKFgSTGfksXedbby7gap8cH2ZQnG8v6wyxNfX3icG1g8gCgHSeJCjsqYFgWXmbXmLmtvyGvoYz4nZXpGz6Fe4"
+  "llu.purposesplit.testnet": "ed25519:go8tVDuqke54iFj7AFSuumPRJMTQCrHUPwKbjMJrTgxu29zta2H2mkhMkQCKMMDAzu6DhY9ozdGaFZd5uDtXcKe",
+  "sparks.purposesplit.testnet": "ed25519:27rv5BsaeRf12afm1vk9mo3YR7MoAguvphEPJhRYzEVETCRqtkoEiVFTdkVcmvjMY69cJ9pdUqNVLuRH6ANtaHdX",
+  "lagoonheights.purposesplit.testnet": "ed25519:55S8yBDjLmRnTfZNBkfNfbq2y2dGGqeZABcmxSkjSqbH4XoyjZh7bEjRhVUbaAZXyWEP2sMtqwtfsen5qTm83yAZ",
+  "cornercare.purposesplit.testnet": "ed25519:7hgZNRyuTDqEiartE9ML9YMCiadQRGsJTt9og6r9NguQdVp9zaR8uLeGBjEPkQRtREQAyYH2hnqy1x7sz9XzrhG",
+  "campusbooks.purposesplit.testnet": "ed25519:3TgQHVsdE4DfhrxZtvew9D8pqNFTb8GfV2S9zyPq9gfPfjceikoYYetDRc3WE1amkRrUKycLpHfJJA5idg3xgcMv",
+  "lagoonhostel.purposesplit.testnet": "ed25519:5TSwqzZwsBN6ZMZMeS6uEjt96TA1AeorHpc9Ws7LEJpqGHV5EAGP7UXArj7ttJDVo9XJaJ6Wxh6CAoUbxHzTTWtz"
 };
 
 export const STORAGE_DEPOSIT = "1250000000000000000000"; // 0.00125 NEAR, to register with the token

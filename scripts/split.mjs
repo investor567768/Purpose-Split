@@ -7,7 +7,7 @@ import { D, NEAR, TGAS, ROOT, call, createSub, exists, link, sub, view } from ".
 
 const MODE = process.argv[2] || "dev";
 const TOKEN = sub("tusd");
-const POTS = sub(process.env.PS_POTS || (MODE === "dev" ? "pots-dev6" : "pots"));
+const POTS = sub(process.env.PS_POTS || (MODE === "dev" ? "pots-dev7" : "pots"));
 const REGISTRY = sub(MODE === "dev" ? "registry-dev" : "registry"); // the council DAO in final
 const DAYS30 = 30 * 24 * 60;
 const REG = 1_250_000_000_000_000_000_000n;

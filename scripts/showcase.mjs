@@ -6,8 +6,9 @@ import { D, NEAR, TGAS, call, link, sub, view } from "./lib.mjs";
 
 const MODE = process.argv[2] || "dev";
 const TOKEN = sub("tusd");
-const POTS = sub(process.env.PS_POTS || (MODE === "dev" ? "pots-dev6" : "pots"));
-const STREET = sub(MODE === "dev" ? "street-dev" : "adeyemi-street"); // replaced by the DAO in final
+const POTS = sub(process.env.PS_POTS || (MODE === "dev" ? "pots-dev7" : "pots"));
+import { STREET_DAO } from "./daos.mjs";
+const STREET = STREET_DAO; // the street's Sputnik DAO: only its vote can pay
 const DAYS30 = 30 * 24 * 60;
 
 async function must(label, p) {

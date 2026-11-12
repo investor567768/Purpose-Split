@@ -1323,3 +1323,46 @@ fn a_completely_full_pot_never_outgrows_what_its_creator_paid_for() {
     println!("full pot: used {used} bytes of {prepaid} prepaid (record {record})");
     assert!(used <= prepaid, "a full pot uses {used} bytes but its creator paid for {prepaid}");
 }
+
+// ---------------------------------------------------------------- handover
+
+#[test]
+fn the_deployer_seeds_the_list_then_hands_it_to_the_council() {
+    let mut c = setup();
+    let council = acc("school-council.sputnik-v2.testnet");
+    at(registry(), 1);
+    c.set_registry_dao(council.clone());
+    assert!(logged("registry_handed_over"));
+    assert_eq!(c.get_config().registry_dao, council);
+
+    // The old holder can no longer change the list.
+    at(registry(), 2);
+    let tried = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        c.add_payee(acc("lookalike.testnet"), "Not a school".into(), PayeeKind::School, "https://x.example".into());
+    }));
+    assert!(tried.is_err());
+    assert!(!c.is_verified(acc("lookalike.testnet")));
+
+    // The council, by its vote, can.
+    at(council.clone(), 3);
+    c.add_payee(acc("newschool.testnet"), "New School".into(), PayeeKind::School, "https://newschool.example/pay".into());
+    assert!(c.is_verified(acc("newschool.testnet")));
+}
+
+#[test]
+#[should_panic(expected = "Only the registry DAO can hand over the verified list")]
+fn nobody_else_can_take_the_list() {
+    let mut c = setup();
+    at(tolu(), 1);
+    c.set_registry_dao(tolu());
+}
+
+#[test]
+#[should_panic(expected = "Only the registry DAO can hand over the verified list")]
+fn after_the_handover_the_deployer_cannot_take_it_back() {
+    let mut c = setup();
+    at(registry(), 1);
+    c.set_registry_dao(acc("school-council.sputnik-v2.testnet"));
+    at(registry(), 2);
+    c.set_registry_dao(registry());
+}

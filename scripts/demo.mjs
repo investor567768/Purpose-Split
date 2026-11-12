@@ -1,8 +1,13 @@
 // Runs the three demo stories on testnet and prints an explorer link for every step,
 // including every refused cheating attempt.
 //
-//   node demo.mjs dev     uses pots-dev, where a plain account stands in for both DAOs
-//   node demo.mjs final   uses pots, governed by the real Sputnik DAOs (later)
+//   node demo.mjs dev     uses the practice contract
+//   node demo.mjs final   uses the final contract
+//
+// Both are governed by real Sputnik DAOs made with NEAR's DAO factory (see daos.mjs):
+// the school-list council holds the verified list, and the street's neighbours vote
+// to pay the electrician. The deployer seeds the first payees, then hands the list
+// to the council for good.
 //
 // Testnet only. Test dollars have no value.
 
@@ -12,17 +17,19 @@ import { fileURLToPath } from "node:url";
 import {
   D, NEAR, TGAS, ROOT, account, call, createSub, dollars, exists, link, sleep, sub, view,
 } from "./lib.mjs";
+import { COUNCIL_DAO, STREET_DAO, HUMAN_COUNCILLOR, STANDIN_COUNCILLOR } from "./daos.mjs";
 
 const MODE = process.argv[2] || "dev";
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const WASM = path.join(HERE, "..", "build", "purpose_split.wasm");
 
 const TOKEN = sub("tusd");
-const POTS = sub(process.env.PS_POTS || (MODE === "dev" ? "pots-dev6" : "pots"));
+const POTS = sub(process.env.PS_POTS || (MODE === "dev" ? "pots-dev7" : "pots"));
 // The picture wallets show for a pass. It lives on the website.
 const PASS_ART = process.env.PS_PASS_ART || "https://purpose-split-web.vercel.app/pass.svg";
-const REGISTRY = sub("registry-dev"); // a plain account standing in for the registry DAO
-const STREET = sub("street-dev"); // a plain account standing in for the street DAO
+// The deployer's account that seeds the first payees, then hands the list to the council DAO.
+const REGISTRY = sub("registry-dev");
+const STREET = STREET_DAO;
 
 const P = {
   mum: sub("mum"),
@@ -38,6 +45,9 @@ const P = {
   pharmacy: sub("cornercare"), // Corner Care Pharmacy (made up)
   organiser: sub("emeka"), // Emeka, who runs the appeal for his mother
   family: sub("ngozi-family"), // the family's own account, for the free part
+  bookshop: sub("campusbooks"), // Campus Books (made up), for the school-year box
+  hostel: sub("lagoonhostel"), // Lagoon Hostel (made up), for the school-year box
+  caterer: sub("unityhall"), // Unity Hall Caterers (made up), proposed to the council by vote
 };
 
 const log = [];
@@ -69,6 +79,33 @@ function note(title, ok, detail) {
 }
 
 const passesOf = (id) => view(POTS, "get_passes", { account_id: id });
+
+const balanceOf = async (id) => (await import("./lib.mjs")).balanceNear(id);
+
+/** A Sputnik proposal that calls one method on the money box contract. */
+const fnCall = (method, args) => ({
+  FunctionCall: {
+    receiver_id: POTS,
+    actions: [{ method_name: method, args: Buffer.from(JSON.stringify(args)).toString("base64"), deposit: "0", gas: String(150n * TGAS) }],
+  },
+});
+
+/**
+ * The street decides by vote: a neighbour proposes, three of the five vote yes,
+ * and the third yes makes the DAO carry the call out. Records each step; when
+ * `cheat` is set, the money box contract must refuse what the vote asked for.
+ */
+async function streetVote(what, method, args, cheat = false) {
+  const kind = fnCall(method, args);
+  const [a, b, c] = P.residents;
+  const proposed = record(`${cheat ? "Cheat: " : ""}a neighbour proposes a street vote to ${what}`,
+    await call(a, STREET_DAO, "add_proposal", { proposal: { description: `Adeyemi Street: ${what}`, kind } }, { deposit: NEAR / 10n }));
+  const vote = (who) => call(who, STREET_DAO, "act_proposal", { id: proposed.value, action: "VoteApprove", proposal: kind }, { gas: 300n * TGAS, failOn: [STREET_DAO, POTS] });
+  record("The first neighbour votes yes", await vote(a));
+  record("A second neighbour votes yes", await vote(b));
+  return record(cheat ? "The vote passes, and the money box refuses to carry it out" : "The third yes vote passes it, and the DAO pays from the street's box",
+    await vote(c), cheat);
+}
 
 const pay = (signer, pot, to, amount) =>
   call(signer, POTS, "pay_to", { pot_id: pot, to, amount: String(amount) }, { gas: 100n * TGAS });
@@ -119,11 +156,13 @@ async function waitPast(deadlineNs) {
 console.log(`Purpose Split demo on testnet (${MODE}): contract ${POTS}\n`);
 console.log("Setting up accounts...");
 for (const id of [P.mum, P.uncle, P.tolu, P.chairman, ...P.residents]) await ensureAccount(id, 0.6);
-for (const id of [P.school, P.otherSchool, P.lookalike, P.sparks, P.hospital, P.pharmacy, P.family]) await ensureAccount(id, 0.3);
+for (const id of [P.school, P.otherSchool, P.lookalike, P.sparks, P.hospital, P.pharmacy, P.family, P.bookshop, P.hostel, P.caterer]) await ensureAccount(id, 0.3);
+// Neighbours pay a small bond (0.1 NEAR) to propose, and gas to vote.
+for (const id of P.residents) if ((await balanceOf(id)) < 1.2) await account(ROOT).transfer({ receiverId: id, amount: NEAR });
+if ((await balanceOf(STANDIN_COUNCILLOR)) < 0.6) await account(ROOT).transfer({ receiverId: STANDIN_COUNCILLOR, amount: NEAR });
 await ensureAccount(P.organiser, 0.6);
 if (MODE === "dev") {
   await ensureAccount(REGISTRY, 0.6);
-  await ensureAccount(STREET, 0.6);
   if (!(await exists(POTS))) {
     const { execFileSync } = await import("node:child_process");
     execFileSync(
@@ -152,12 +191,41 @@ if (MODE === "dev") {
     [P.sparks, "Sparks Electrical (demo)", "Vendor", "https://sparkselectrical.example/contact"],
     [P.hospital, "Lagoon Heights Hospital (demo)", "Hospital", "https://lagoonheights.example/pay"],
     [P.pharmacy, "Corner Care Pharmacy (demo)", "Vendor", "https://cornercare.example/accounts"],
+    [P.bookshop, "Campus Books (demo)", "Vendor", "https://campusbooks.example/accounts"],
+    [P.hostel, "Lagoon Hostel (demo)", "Vendor", "https://lagoonhostel.example/pay-rent"],
   ]) {
     if (!(await view(POTS, "is_verified", { account_id: id }))) {
-      record(`The registry adds ${name} to the verified list`,
+      record(`The deployer seeds ${name} onto the verified list`,
         await call(REGISTRY, POTS, "add_payee", { account_id: id, name, kind, evidence }));
     }
   }
+}
+
+// ------------------------------------------- the verified list goes to a vote
+console.log("\nThe verified list is handed to the school-list council\n");
+if ((await view(POTS, "get_config")).registry_dao !== COUNCIL_DAO) {
+  record(`The deployer hands the verified list to the school-list council, a Sputnik DAO (${COUNCIL_DAO})`,
+    await call(REGISTRY, POTS, "set_registry_dao", { account_id: COUNCIL_DAO }));
+}
+note("From now on only a council vote can change the list",
+  (await view(POTS, "get_config")).registry_dao === COUNCIL_DAO, `get_config says the list is held by ${COUNCIL_DAO}`);
+record("Cheat: the deployer tries to add a payee after handing the list over",
+  await call(REGISTRY, POTS, "add_payee", { account_id: P.lookalike, name: "LLU Bursary", kind: "School", evidence: "https://x.example" }), true);
+record("Cheat: Tolu tries to put his own lookalike account on the list",
+  await call(P.tolu, POTS, "add_payee", { account_id: P.lookalike, name: "LLU Bursary", kind: "School", evidence: "https://x.example" }), true);
+if (!(await view(POTS, "is_verified", { account_id: P.caterer }))) {
+  const addCaterer = fnCall("add_payee", {
+    account_id: P.caterer, name: "Unity Hall Caterers (demo)", kind: "Vendor", evidence: "https://unityhall.example/accounts",
+  });
+  const proposed = record("A councillor proposes adding Unity Hall Caterers, with a link to where it publishes its account",
+    await call(STANDIN_COUNCILLOR, COUNCIL_DAO, "add_proposal",
+      { proposal: { description: "Add Unity Hall Caterers (demo) to the verified list. Evidence: https://unityhall.example/accounts", kind: addCaterer } },
+      { deposit: NEAR / 10n }));
+  record("The first councillor votes yes",
+    await call(STANDIN_COUNCILLOR, COUNCIL_DAO, "act_proposal", { id: proposed.value, action: "VoteApprove", proposal: addCaterer }, { gas: 300n * TGAS }));
+  note("Two yes votes are needed: the proposal waits for the second councillor, a real person",
+    !(await view(POTS, "is_verified", { account_id: P.caterer })),
+    `proposal ${proposed.value} on ${COUNCIL_DAO} is waiting for ${HUMAN_COUNCILLOR} to vote; Unity Hall is not on the list yet`);
 }
 
 // ------------------------------------------------------- part 1: the family
@@ -220,18 +288,21 @@ const street = record("The chairman creates a pot: 200 for the transformer repai
 for (const r of P.residents.slice(0, 3)) record(`${r.split(".")[0]} adds 40`, await give(r, street, 40n * D));
 record("Sparks Electrical asks for 100 to buy parts",
   await call(P.sparks, POTS, "request_payment", { pot_id: street, amount: String(100n * D), note: "Parts for the transformer" }));
-record("Cheat: the vote tries to pay before the target is reached", await pay(STREET, street, P.sparks, 100n * D), true);
+await streetVote("pay Sparks Electrical's 100 before the target is reached",
+  "pay_request", { pot_id: street, request_id: 0 }, true);
 for (const r of P.residents.slice(3)) record(`${r.split(".")[0]} adds 40`, await give(r, street, 40n * D));
 record("Cheat: the chairman pays himself directly", await pay(P.chairman, street, P.chairman, 200n * D), true);
-record("Cheat: a passed vote tries to pay the chairman", await pay(STREET, street, P.chairman, 200n * D), true);
-record("Cheat: the vote tries to pay an amount the electrician never asked for", await pay(STREET, street, P.sparks, 150n * D), true);
-record("The residents' vote pays the request for parts: 100",
-  await call(STREET, POTS, "pay_request", { pot_id: street, request_id: 0 }, { gas: 100n * TGAS }));
+await streetVote("pay the street's money to the chairman",
+  "pay_to", { pot_id: street, to: P.chairman, amount: String(200n * D) }, true);
+await streetVote("pay Sparks Electrical 150, an amount it never asked for",
+  "pay_to", { pot_id: street, to: P.sparks, amount: String(150n * D) }, true);
+await streetVote("pay Sparks Electrical's request for parts: 100",
+  "pay_request", { pot_id: street, request_id: 0 });
 record("Sparks Electrical confirms the 100 arrived", await call(P.sparks, POTS, "confirm_payment", { pot_id: street, payment_index: 0 }));
 record("The light is back: Sparks Electrical asks for the remaining 80",
   await call(P.sparks, POTS, "request_payment", { pot_id: street, amount: String(80n * D), note: "Labour, light restored" }));
-record("The residents' vote pays it",
-  await call(STREET, POTS, "pay_request", { pot_id: street, request_id: 1 }, { gas: 100n * TGAS }));
+await streetVote("pay Sparks Electrical's 80 for labour",
+  "pay_request", { pot_id: street, request_id: 1 });
 record("Sparks Electrical confirms the 80 arrived", await call(P.sparks, POTS, "confirm_payment", { pot_id: street, payment_index: 1 }));
 {
   const passes = (await passesOf(STREET)).filter((x) => x.pot_id === street);

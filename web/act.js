@@ -2,7 +2,7 @@
 // paying bills, sending bills, closing a box and starting a new one.
 // The 2 MB wallet bundle loads only when it is first needed.
 
-import { BOX_DEPOSIT, DEMO_KEYS, POTS, RPCS, STORAGE_DEPOSIT, TOKEN } from "./config.js";
+import { BOX_DEPOSIT, COUNCIL_DAO, DEMO_KEYS, POTS, RPCS, STORAGE_DEPOSIT, TOKEN } from "./config.js";
 
 let walletPromise = null;
 let wallet = null;
@@ -58,12 +58,35 @@ export async function give(potId, units, part) {
 
 export const payBill = (potId, requestId) => send(POTS, "pay_request", { pot_id: potId, request_id: requestId }, { gas: 100 });
 export const sendBill = (potId, units, note) => send(POTS, "request_payment", { pot_id: potId, amount: String(units), note }, { gas: 50 });
-export const confirmPayment = (potId, index) => send(POTS, "confirm_payment", { pot_id: potId, payment_index: index }, { gas: 30 });
+export const confirmPayment = (potId, index) => send(POTS, "confirm_payment", { pot_id: potId, payment_index: index }, { gas: 50 });
 export const closeBox = (potId) => send(POTS, "settle", { pot_id: potId }, { gas: 300 });
 export const createBox = (args) => send(POTS, "create_pot", args, { gas: 100, deposit: BOX_DEPOSIT });
 
 /** True if this payee has a published demo key, so a visitor can play it. */
 export const canPlay = (accountId) => Boolean(DEMO_KEYS[accountId]);
+
+/** Asks the school-list council to vote a payee onto the verified list. The bond comes back when it passes. */
+export const proposePayee = (payee, bond) =>
+  send(COUNCIL_DAO, "add_proposal", {
+    proposal: {
+      description: `Add ${payee.name} (${payee.account_id}) to the verified list. Evidence: ${payee.evidence}`,
+      kind: {
+        FunctionCall: {
+          receiver_id: POTS,
+          actions: [{
+            method_name: "add_payee",
+            args: btoa(String.fromCharCode(...new TextEncoder().encode(JSON.stringify(payee)))),
+            deposit: "0",
+            gas: "150000000000000",
+          }],
+        },
+      },
+    },
+  }, { gas: 100, deposit: bond });
+
+/** A councillor's vote. The vote that passes a proposal also carries it out, so it gets plenty of gas. */
+export const voteOnCouncil = (id, action, kind) =>
+  send(COUNCIL_DAO, "act_proposal", { id, action, proposal: kind }, { gas: 300 });
 
 /** Acts as a made-up payee with its limited demo key. No wallet needed. */
 export async function playPayee(accountId, methodName, args) {
@@ -75,6 +98,7 @@ export async function playPayee(accountId, methodName, args) {
     contractId: POTS,
     methodName,
     args,
+    gas: methodName === "confirm_payment" ? 50 : 30,
   });
 }
 
