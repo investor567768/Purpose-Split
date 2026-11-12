@@ -328,7 +328,7 @@ async function booksLine() {
 
 const QUESTIONS = [
   ["Is this real money?", "No. This runs on NEAR testnet with test dollars (tUSD) that are free and have no value, so you can try every step safely. A real launch would use USDC, a digital dollar that already exists on NEAR."],
-  ["Why not just pay the school directly?", "If one parent pays one school, a bank transfer is fine. A money box helps when several people chip in, including relatives abroad. Everyone puts money into one place, everyone can see the school was paid, and whatever isn't used goes back to each of them on its own. Nobody has to trust the person holding the money."],
+  ["Why not just pay the school directly?", "If one parent pays one school, a bank transfer is fine. A money box helps when several people chip in, including relatives abroad. Everyone puts money into one place, everyone can see the school was paid, and whatever isn't used can be sent back to each of them, by anyone, without anyone's approval. Nobody has to trust the person holding the money."],
   ["Can the student send the money anywhere else?", "No. The money box pays only the school named on it, and only against a bill the school itself sent. Try it above: every other destination is refused."],
   ["What is the pass?", `When the school confirms it was paid, the contract gives the student a "Fees paid" pass. Nobody can make one any other way, and it can't be sold or lent to a friend. Anyone can check it, for example before an exam or at the hostel gate. <a href="#/pass">Check a pass</a>.`],
   ["How do you know the account really belongs to the school?", "The contract can't know that by itself, so the list has to be trustworthy. A school is added only by a council vote, and only with a link to where the school itself publishes its account. You see that link before you send. If a school is ever removed, families can take their money back at once."],
@@ -409,7 +409,7 @@ function home() {
 
   <section class="section" aria-labelledby="back-h">
     <h2 id="back-h">What if it doesn't work out?</h2>
-    <p class="lead">Nobody's money gets stuck. It goes back on its own, to each person in proportion to what they gave.</p>
+    <p class="lead">Nobody's money gets stuck. Anyone can press refund, with no approval needed, and the contract sends each person their exact share of what they gave.</p>
     <ul class="outcomes">
       <li><h3>The bill is smaller than the box</h3><p>After the deadline, the part that wasn't used goes back to everyone who gave.</p></li>
       <li><h3>The target isn't reached</h3><p>If the box was set to "all or nothing", nobody is paid and everyone gets everything back.</p></li>
@@ -1471,6 +1471,22 @@ async function proofPage() {
     main.querySelector("[data-steps]").innerHTML = `<li class="error">Couldn't load the demo run.</li>`;
   }
 }
+
+// ------------------------------------------------------------------ light / dark
+
+const themeBtn = document.querySelector("[data-theme-btn]");
+const isDark = () => {
+  const set = document.documentElement.dataset.theme;
+  return set ? set === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+};
+const labelTheme = () => themeBtn.setAttribute("aria-label", isDark() ? "Switch to light mode" : "Switch to dark mode");
+themeBtn.addEventListener("click", () => {
+  const next = isDark() ? "light" : "dark";
+  document.documentElement.dataset.theme = next;
+  try { localStorage.setItem("theme", next); } catch (e) {}
+  labelTheme();
+});
+labelTheme();
 
 // ------------------------------------------------------------------ menu
 
