@@ -349,61 +349,73 @@ const TEMPLATES = [
   ["Rent or a group purchase", "Pays only the landlord or seller, and only if the full amount is raised.", "Same rules, different payees"],
 ];
 
+/** Small line drawings for the three steps on the homepage. */
+const ICONS = {
+  family: `<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="17" cy="15" r="6"/><path d="M6 40c0-7 5-12 11-12s11 5 11 12"/><circle cx="34" cy="19" r="4.5"/><path d="M28 30c1.6-1.3 3.6-2 6-2 5 0 8 4 8 10"/></svg>`,
+  box: `<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="18" width="34" height="23" rx="1"/><path d="M7 18l4-8h26l4 8"/><rect x="19" y="25" width="10" height="9" rx="1"/><path d="M21 25v-3a3 3 0 0 1 6 0v3"/></svg>`,
+  pass: `<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 12h36v8a4 4 0 0 0 0 8v8H6v-8a4 4 0 0 0 0-8z"/><path d="M15 24l5 5 10-10"/></svg>`,
+};
+
 function home() {
   setTitle("");
   markNav("home");
   main.innerHTML = `
   <section class="hero">
-    <h1>Parents send school fees. The money can only pay the school.</h1>
-    <p class="lead">The family puts the fees into one money box. The student can pay the school from it, and nobody else. When the school confirms, the student gets a pass that proves the fees are paid.</p>
-    <p class="cta">
-      <a class="button" href="#try-h">Try to cheat</a>
-      <a class="button button--quiet" href="#/try">How to try it</a>
-    </p>
+    <div class="hero__text">
+      <h1>Parents send school fees. The money can only pay the school.</h1>
+      <p class="lead">The family fills one money box. The student can pay the school from it, and nobody else. <span class="hero__more">When the school confirms, the student gets a pass that proves the fees are paid.</span></p>
+      <p class="cta">
+        <a class="button" href="#try-h">Try to cheat</a>
+        <a class="button button--quiet" href="#/try">How to try it</a>
+      </p>
+    </div>
+    <div class="hero__pass" data-pass><p class="loading">Reading the pass from NEAR testnet…</p></div>
   </section>
 
-  <ol class="story" aria-label="How it works">
-    <li class="slip">
-      <h2>The family sends the fees</h2>
-      <p>A parent puts 300 into a money box for the school fees. An uncle abroad adds to the same box.</p>
+  <ol class="flow" aria-label="How it works">
+    <li>
+      <span class="flow__icon" aria-hidden="true">${ICONS.family}</span>
+      <div><h2>The family sends the fees</h2>
+      <p>A parent puts 300 into a money box. An uncle abroad adds to the same box.</p></div>
     </li>
-    <li class="slip">
-      <h2>It can only pay the school</h2>
-      <p>The student's own wallet, a friend who wants a loan, a fake account: the money box says no to all of them.</p>
-      <span class="stamp stamp--small stamp--no">Refused</span>
+    <li>
+      <span class="flow__icon" aria-hidden="true">${ICONS.box}</span>
+      <div><h2>It can only pay the school</h2>
+      <p>The student's own wallet, a friend who wants a loan, a fake account: all refused.</p></div>
     </li>
-    <li class="slip">
-      <h2>The student gets a pass</h2>
-      <p>The school sends its bill, the student pays it, and the school confirms. The student now holds a "Fees paid" pass that anyone can check.</p>
-      <span class="stamp stamp--small stamp--ok">Paid</span>
+    <li>
+      <span class="flow__icon" aria-hidden="true">${ICONS.pass}</span>
+      <div><h2>The student gets a pass</h2>
+      <p>The school confirms it was paid, and the student holds a "Fees paid" pass anyone can check.</p></div>
     </li>
   </ol>
 
-  <section class="section" aria-labelledby="try-h">
-    <h2 id="try-h">Don't take our word for it</h2>
-    <p class="lead">Choose where the school fees go and see what happens. The answer comes from the real money box on NEAR, live.</p>
-    <div class="pot-grid">
+  <section class="band" aria-labelledby="try-h">
+    <div class="band__head">
+      <p class="kicker">Don't take our word for it</p>
+      <h2 id="try-h">Try to cheat</h2>
+      <p class="lead">Choose where the school fees go and see what happens. The answer comes from the real money box on NEAR, live.</p>
+    </div>
+    <div class="band__grid">
       ${cheatSlip("family", { heading: "h3", tabs: false })}
-      <aside class="prose">
+      <aside class="band__aside">
         <h3>What is the money box?</h3>
         <p>A small program on the NEAR blockchain, called a smart contract. It holds the fees and follows its rules on its own. Nobody can override it: not the student, not the parent, not us.</p>
         <h3>How do we know it's really the school?</h3>
-        <p>The money box only pays accounts on a verified list. A school gets on the list when a council votes it in, with a link to where the school itself publishes that account. You see the link before you send.</p>
+        <p>The money box only pays accounts on a verified list. A school gets on the list when a council votes it in, with a link to where the school itself publishes that account.</p>
         <p data-evidence class="small"></p>
       </aside>
     </div>
   </section>
 
-  <section class="section" aria-labelledby="pass-h">
-    <h2 id="pass-h">Proof the fees were paid</h2>
-    <p class="lead">This is a real pass, read from NEAR just now. The school's confirmation made it. Nobody can fake one, sell one or lend one to a friend.</p>
-    <div class="pot-grid">
-      <div data-pass><p class="loading">Reading the pass from NEAR testnet…</p></div>
-      <aside class="prose">
-        <h3>Check anyone's pass</h3>
-        <p>An exam officer or a hostel porter types the student's account and sees the answer straight from the contract.</p>
-        ${passForm()}
-      </aside>
+  <section class="section split2" aria-labelledby="pass-h">
+    <div>
+      <h2 id="pass-h">Check anyone's pass</h2>
+      <p class="lead">The pass at the top of this page is real, read from NEAR just now. The school's confirmation made it. Nobody can fake one, sell one or lend one to a friend.</p>
+    </div>
+    <div class="check-card">
+      <p>An exam officer or a hostel porter types the student's account and sees the answer straight from the contract.</p>
+      ${passForm()}
     </div>
   </section>
 
@@ -417,8 +429,11 @@ function home() {
     </ul>
   </section>
 
-  <section class="section" aria-labelledby="q-h">
-    <h2 id="q-h">Questions</h2>
+  <section class="section split2" aria-labelledby="q-h">
+    <div>
+      <h2 id="q-h">Questions</h2>
+      <p class="lead">Still unsure? <a href="#/try">Try it yourself</a> in a few minutes, with free test dollars.</p>
+    </div>
     ${faq(QUESTIONS)}
   </section>`;
 
@@ -1472,6 +1487,22 @@ async function proofPage() {
   }
 }
 
+// ------------------------------------------------------------------ light / dark
+
+const themeBtn = document.querySelector("[data-theme-btn]");
+const isDark = () => {
+  const set = document.documentElement.dataset.theme;
+  return set ? set === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+};
+const labelTheme = () => themeBtn.setAttribute("aria-label", isDark() ? "Switch to light mode" : "Switch to dark mode");
+themeBtn.addEventListener("click", () => {
+  const next = isDark() ? "light" : "dark";
+  document.documentElement.dataset.theme = next;
+  try { localStorage.setItem("theme", next); } catch (e) {}
+  labelTheme();
+});
+labelTheme();
+
 // ------------------------------------------------------------------ menu
 
 const menu = document.getElementById("menu");
@@ -1481,7 +1512,7 @@ function openMenu() {
   menu.hidden = false;
   menuBtn.setAttribute("aria-expanded", "true");
   document.body.classList.add("menu-on");
-  (menu.querySelector('[aria-current="page"]') || menu.querySelector("a")).focus();
+  menu.querySelector(".menu__inner").focus();
 }
 
 function closeMenu() {
