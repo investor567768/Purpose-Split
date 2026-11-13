@@ -38,7 +38,7 @@ In short: **givers stay in control after they send.** The money has one purpose,
 2. **Bill.** Only the payees named on the box (a school, a hospital, an electrician) can send it a bill. They are on a verified list, each with a link to where they publish their own account.
 3. **Pay.** The person or group named on the box pays the bill. The money can't go anywhere else: not to the person pressing pay, not to a lookalike account, not to a different payee.
 4. **Pass.** When the payee confirms the money arrived, the contract gives the payer a pass: a student's says "Fees paid". Nobody can make one any other way, and it can't be sold or lent. Anyone can check it on the website's "Check a pass" page, or read it as a standard NEAR token (NEP-171).
-5. **Return.** After the deadline, anyone can press refund, with no approval needed, and the contract sends each giver their exact share of what is left, in proportion to what they gave.
+5. **Return.** Money that isn't used goes back to the people who gave it. After the deadline, anyone can press the refund button, without asking permission, and the contract pays everyone back their fair share. For example, if Mum gave 100 and an uncle gave 50, and 30 is left over, Mum gets 20 back and the uncle gets 10.
 
 Unlike a shared account or a multisig, nobody can be talked into sending the money somewhere else. The contract has no function that moves a box's money anywhere except its named payees, its stated free part, or back to the givers.
 

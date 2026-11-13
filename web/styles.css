@@ -926,3 +926,38 @@ a.acct:hover { color: var(--ink); }
   .theme-btn { width: 30px; height: 30px; }
   .top__right { gap: 4px; }
 }
+
+/* A small link that jumps down the page to "Try to cheat" */
+.jump { margin: 14px 0 0; font-weight: 700; }
+
+/* Footer: a quiet dark band that ends the page */
+.foot {
+  --band: #173f33;
+  background: var(--band);
+  box-shadow: 0 0 0 100vmax var(--band);
+  clip-path: inset(0 -100vmax);
+  border-top: 0;
+  margin-top: 56px;
+  padding: 44px var(--gutter) 40px;
+  color: #b9cfc6;
+  font-size: 0.95rem;
+}
+.foot__name { color: #fff; font-size: 1.25rem; margin-bottom: 8px; }
+.foot h2 { font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace; font-variation-settings: normal; font-size: 0.78rem; font-weight: 500; letter-spacing: 0.16em; text-transform: uppercase; color: #8fb3a6; margin-bottom: 14px; }
+.foot ul { gap: 10px; }
+.foot a { color: #f4f1e4; text-decoration: none; font-size: 1.02rem; }
+.foot a:hover { text-decoration: underline; text-underline-offset: 4px; }
+.foot a[target="_blank"]::after { content: " ↗"; font-size: 0.9em; opacity: 0.8; }
+.foot__grid { margin-bottom: 30px; }
+.foot > p { max-width: none; border-top: 1px solid rgba(255, 255, 255, 0.14); padding-top: 18px; color: #8fb3a6; font-size: 0.85rem; }
+[data-theme="dark"] .foot { --band: #0d1f1a; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .foot { --band: #0d1f1a; } }
+
+/* Header, any phone and any text size: the signed-in name gives up space first,
+   so the logo, the light/dark switch and the Menu button are never cut off. */
+.wordmark { flex: 0 0 auto; }
+.top__right { flex: 1 1 0; min-width: 0; justify-content: flex-end; }
+.who { flex: 0 1 auto; min-width: 0; }
+.who__name { display: block; min-width: 0; max-width: min(18ch, 100%); }
+.theme-btn, .menu-btn { flex: 0 0 auto; }
+@media (max-width: 480px) { .who__name { max-width: 100%; } }

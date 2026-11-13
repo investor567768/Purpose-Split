@@ -2,7 +2,7 @@
 // browser. "Try to cheat" asks the contract's own `why_refused` check, so the
 // answers on screen are the contract's words, not ours.
 
-import { CHEATS, COUNCIL_DAO, STREET_DAO, INTENTS_BOX, EXPLORER, LIVE, PEOPLE, POTS, RPCS, ROOT, SAY, STORY, SPLIT, TOKEN, GITHUB } from "./config.js";
+import { CHEATS, COUNCIL_DAO, STREET_DAO, INTENTS_BOX, HIDDEN_BOXES, EXPLORER, LIVE, PEOPLE, POTS, RPCS, ROOT, SAY, STORY, SPLIT, TOKEN, GITHUB } from "./config.js";
 import {
   canPlay, closeBox, confirmPayment, createBox, currentAccount, explain, getTestDollars, give,
   loadWallet, onAccountChange, payBill, playPayee, proposePayee, proposeRemoval, sendBill, signIn, signOut, voteOnCouncil,
@@ -782,7 +782,7 @@ async function potsPage() {
       .filter(Boolean)
       .map((p) => potCard(p, exampleFor(p.id)))
       .join("");
-    const yours = pots.filter((p) => !ours(p.creator)).reverse();
+    const yours = pots.filter((p) => !ours(p.creator) && !HIDDEN_BOXES.includes(p.id)).reverse();
     main.querySelector("[data-yours]").innerHTML = yours.length
       ? yours.map((p) => potCard(p)).join("")
       : `<p>None yet. Be the first: it takes a minute on testnet.</p>`;
@@ -854,6 +854,7 @@ async function potPage(id) {
     ${ex ? `<p class="kicker">${esc(ex.kicker)}</p>` : ""}
     <h1>${esc(titleOf(p))}</h1>
     <p class="lead">This money can only go to ${esc(only)}, against their own bills. ${group ? "A vote of the group decides each payment." : p.releaser === currentAccount() ? "You pay the bills." : `${esc(cap(SAY[p.releaser] || nameOf(p.releaser)))} pays the bills.`} Whatever isn't used goes back to the givers.</p>
+    ${cheatKey || ownCheat ? `<p class="jump"><a href="#cheat-box" data-jump="cheat-box">Try to cheat this box ↓</a></p>` : ""}
     ${p.id === INTENTS_BOX ? `<div class="demo"><span class="demo__tag">NEAR Intents</span> <strong>Given from abroad, the NEAR Intents way.</strong> NEAR Intents lets someone pay from another chain, like USDC on Base or Solana, and the money is delivered by a go-between. Here the go-between delivered 150 and named the uncle as the giver, so the box credited the uncle, not the go-between. It then delivered 100 more, but only 50 fitted the 200 target: the other 50 was kept for the uncle, not bounced back, and he took it out. NEAR Intents only runs on mainnet, so on testnet a stand-in account plays its part. <a href="${EXPLORER}/address/intents-relay.${ROOT}" target="_blank" rel="noopener">See the stand-in's transactions</a>.</div>` : ""}
     ${nextSteps(p)}
     <div class="split">
@@ -921,7 +922,7 @@ async function potPage(id) {
       </section>
     </div>
   </div>
-  ${cheatKey || ownCheat ? `<section class="section" aria-label="Try to cheat this box"><div class="pot-grid">${cheatSlip(cheatKey || "own", { heading: "h2", tabs: false, whose: p.creator.endsWith(`.${ROOT}`) ? "demo" : p.creator === currentAccount() ? "yours" : "this" })}<aside class="prose"><h3>Try to spend this box's money on something else</h3><p>Pick who is trying and where they send the money. The real contract on NEAR answers, with its reason. Nothing is sent and no wallet is needed.</p></aside></div></section>` : ""}`;
+  ${cheatKey || ownCheat ? `<section class="section" id="cheat-box" aria-label="Try to cheat this box"><div class="pot-grid">${cheatSlip(cheatKey || "own", { heading: "h2", tabs: false, whose: p.creator.endsWith(`.${ROOT}`) ? "demo" : p.creator === currentAccount() ? "yours" : "this" })}<aside class="prose"><h3>Try to spend this box's money on something else</h3><p>Pick who is trying and where they send the money. The real contract on NEAR answers, with its reason. Nothing is sent and no wallet is needed.</p></aside></div></section>` : ""}`;
   if (cheatKey || ownCheat) wireCheat(main.querySelector("form[data-story]"), ownCheat || undefined);
   renderActions(p);
   main.querySelector("[data-csv]").addEventListener("click", () => downloadCsv(p));
@@ -1565,6 +1566,15 @@ menu.addEventListener("click", (e) => { if (e.target.closest("a")) closeMenu(); 
 document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeMenu(); });
 
 // ------------------------------------------------------------------ router
+
+// Links that jump down the same page, without changing the page's address.
+document.addEventListener("click", (e) => {
+  const link = e.target.closest("[data-jump]");
+  const target = link && document.getElementById(link.dataset.jump);
+  if (!target) return;
+  e.preventDefault();
+  target.scrollIntoView({ behavior: "smooth" });
+});
 
 function route() {
   if (location.hash && !location.hash.startsWith("#/")) {

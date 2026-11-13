@@ -10,7 +10,7 @@ export const DAO_FACTORY = "sputnik-v2.testnet";
 export const COUNCIL_DAO = `purposesplit-council.${DAO_FACTORY}`; // votes payees onto the verified list
 export const STREET_DAO = `adeyemi-street.${DAO_FACTORY}`; // the neighbours' vote pays the electrician
 export const TOKEN = `tusd.${ROOT}`;
-export const GITHUB = ""; // filled in once the repository is public
+export const GITHUB = "https://github.com/investor567768/Purpose-Split"; // the public repository
 
 // Pots from the full demo run (finished: paid, settled, refunded).
 export const STORY = { family: 0, street: 1, appeal: 2 };
@@ -18,6 +18,9 @@ export const STORY = { family: 0, street: 1, appeal: 2 };
 export const LIVE = { family: 3, street: 4, appeal: 5 };
 // The "split" box: one school year paid to the school, a bookshop and a hostel, plus pocket money.
 export const SPLIT = 6;
+// Spare boxes made while recording the video. Boxes can't be deleted from the chain,
+// so these are only left off the list; their links still work.
+export const HIDDEN_BOXES = [9, 10];
 export const INTENTS_BOX = 7; // the gift through a stand-in for NEAR Intents (scripts/intents-sim.mjs)
 
 const s = (name) => `${name}.${ROOT}`;
