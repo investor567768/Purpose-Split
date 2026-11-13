@@ -749,7 +749,7 @@ function potCard(p, ex) {
   return `
   <a class="slip pot-card ${p.kind === "Group" ? "slip--yellow" : ""}" href="#/pot/${p.id}" style="text-decoration:none;color:inherit">
     ${ex ? `<p class="kicker">${esc(ex.kicker)}</p>` : ""}
-    <div class="slip__head"><h3>${esc(titleOf(p))}</h3><span class="slip__no">No. ${p.id}</span></div>
+    <div class="slip__head"><h3>${esc(titleOf(p))}</h3></div>
     ${ex ? `<p>${esc(ex.blurb)}</p>` : ""}
     ${field("Pays only", esc(either(p.payees.map(payeeName))))}
     ${field("Raised", `${money(p.raised)} of ${money(p.target)}`)}
@@ -1191,7 +1191,8 @@ function readProposal(x) {
   if (!a) return { what: x.description, payee: null };
   let args = {};
   try { args = JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(a.args), (ch) => ch.charCodeAt(0)))); } catch {}
-  if (a.method_name === "add_payee") return { what: `Add ${undemo(args.name)} to the verified list`, payee: args };
+  const other = (String(x.description || "").match(/\(other: ([^)]{1,40})\)/) || [])[1];
+  if (a.method_name === "add_payee") return { what: `Add ${undemo(args.name)}${other ? ` (${other})` : ""} to the verified list`, payee: args };
   if (a.method_name === "remove_payee") return { what: `Remove ${nameOf(args.account_id)} from the verified list`, payee: args };
   if (a.method_name === "set_registry_dao") return { what: `Hand the verified list to ${args.account_id}`, payee: null };
   return { what: x.description, payee: null };
@@ -1237,6 +1238,7 @@ async function payeesPage() {
         <label class="field"><span class="field__label">Name</span><input name="name" maxlength="60" required placeholder="Unity Grammar School"></label>
         <label class="field"><span class="field__label">Their NEAR account</span><input name="account" required autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="unitygrammar.testnet"></label>
         <label class="field"><span class="field__label">What they are</span><select name="kind">${Object.entries(KINDS).map(([k, v]) => `<option value="${k}">${v}</option>`).join("")}</select></label>
+        <label class="field" data-other hidden><span class="field__label">What are they?</span><input name="other" maxlength="40" placeholder="For example: church, landlord, burial service"></label>
         <label class="field"><span class="field__label">Evidence: a link where they publish this account themselves</span><input name="evidence" required type="url" placeholder="https://unitygrammar.edu.ng/pay-fees"></label>
         <p class="small" data-bond>Proposing needs a small bond in NEAR, which comes back when the proposal passes.</p>
         <button class="button" type="submit">Send to the council</button>
@@ -1368,6 +1370,8 @@ async function payeesPage() {
 
     // Propose a payee.
     const form = main.querySelector("[data-propose]");
+    const otherBox = form.querySelector("[data-other]");
+    form.kind.addEventListener("change", () => { otherBox.hidden = form.kind.value !== "Other"; });
     form.addEventListener("submit", async (e) => {
       e.preventDefault();
       const d = Object.fromEntries(new FormData(form));
@@ -1377,12 +1381,14 @@ async function payeesPage() {
         : !ACCOUNT_RE.test(account) ? "Type a NEAR account name, like unitygrammar.testnet."
         : !/^https:\/\/\S+$/.test(String(d.evidence || "").trim()) ? "The evidence must be an https link."
         : payees.some((x) => x.account_id === account) ? "That account is already on the verified list."
+        : d.kind === "Other" && !String(d.other || "").trim() ? "Say what they are, for example a church or a landlord."
         : "";
       if (problem) { msg.textContent = problem; return; }
       if (!currentAccount()) { msg.textContent = "Sign in first, then send it to the council."; signIn(); return; }
       msg.textContent = "Confirm the proposal in your wallet…";
       try {
-        await proposePayee({ account_id: account, name: String(d.name).trim(), kind: d.kind, evidence: String(d.evidence).trim() }, bond);
+        const other = d.kind === "Other" ? String(d.other || "").trim() : "";
+        await proposePayee({ account_id: account, name: String(d.name).trim(), kind: d.kind, evidence: String(d.evidence).trim() }, bond, other);
         msg.textContent = "Sent. The council can now vote on it below.";
         setTimeout(() => payeesPage(), 1500);
       } catch (err) {

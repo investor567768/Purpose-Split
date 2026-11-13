@@ -66,10 +66,12 @@ export const createBox = (args) => send(POTS, "create_pot", args, { gas: 100, de
 export const canPlay = (accountId) => Boolean(DEMO_KEYS[accountId]);
 
 /** Asks the school-list council to vote a payee onto the verified list. The bond comes back when it passes. */
-export const proposePayee = (payee, bond) =>
+/** `other` is what the payee is when its kind is "Other" (a church, a landlord). The
+ *  contract only knows four kinds, so it rides in the proposal for the council to read. */
+export const proposePayee = (payee, bond, other = "") =>
   send(COUNCIL_DAO, "add_proposal", {
     proposal: {
-      description: `Add ${payee.name} (${payee.account_id}) to the verified list. Evidence: ${payee.evidence}`,
+      description: `Add ${payee.name}${other ? ` (other: ${other.replace(/[()]/g, "")})` : ""} (${payee.account_id}) to the verified list. Evidence: ${payee.evidence}`,
       kind: {
         FunctionCall: {
           receiver_id: POTS,

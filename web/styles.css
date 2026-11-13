@@ -892,7 +892,7 @@ a.acct:hover { color: var(--ink); }
 }
 @media (max-width: 360px) { .wordmark { font-size: 0.98rem; } }
 /* Narrow phones: the menu button keeps its lines and drops the word (screen readers still hear "Menu"). */
-@media (max-width: 380px) {
+@media (max-width: 480px) {
   .menu-btn { font-size: 0; gap: 0; padding: 10px; }
   .menu-btn__lines { width: 18px; height: 12px; }
 }
@@ -907,3 +907,22 @@ a.acct:hover { color: var(--ink); }
 .demo__tag { display: inline-block; margin-right: 6px; padding: 1px 7px; border: 1.5px solid var(--violet); color: var(--violet); font-size: 0.75rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
 .more { margin-top: 18px; border-top: 1px dashed rgba(var(--rule-rgb), 0.45); padding-top: 12px; }
 .more summary { cursor: pointer; color: var(--print); font-weight: 600; }
+
+/* Phones: logo, light/dark, Sign in and Menu share one row without touching. */
+@media (max-width: 480px) {
+  .top__right { gap: 8px; }
+  .theme-btn { width: 34px; height: 34px; }
+  .who__btn { padding: 6px 10px; font-size: 0.95rem; }
+  .menu-btn { padding: 10px; }
+}
+@media (max-width: 480px) {
+  .who__name { max-width: 7.5rem; padding: 6px 8px; }
+}
+@media (max-width: 360px) {
+  .who__name { max-width: 5.5rem; }
+}
+@media (max-width: 340px) {
+  .who__name { max-width: 4.2rem; }
+  .theme-btn { width: 30px; height: 30px; }
+  .top__right { gap: 4px; }
+}

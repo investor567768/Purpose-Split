@@ -183,6 +183,6 @@ web-src/      the bundle for NEAR Wallet Selector
 
 ## Built with
 
-Written from scratch during the NEAR Hackathon window, November 2026; there is no earlier code. Built with AI help: Claude (Anthropic) wrote much of the code, tests and text, directed and reviewed by the author. Uses near-sdk and near-contract-standards (NEP-141, NEP-145, NEP-171, NEP-297), Sputnik DAO through NEAR's DAO factory, near-api-js, NEAR Wallet Selector, and the Archivo font (SIL Open Font License).
+Written from scratch during the NEAR Hackathon window, November 2026; there is no earlier code. Built with AI coding assistance from Claude (Anthropic). Uses near-sdk and near-contract-standards (NEP-141, NEP-145, NEP-171, NEP-297), Sputnik DAO through NEAR's DAO factory, near-api-js, NEAR Wallet Selector, and the Archivo font (SIL Open Font License).
 
-License: MIT
+License: [MIT](LICENSE)
