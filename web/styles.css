@@ -961,3 +961,9 @@ a.acct:hover { color: var(--ink); }
 .who__name { display: block; min-width: 0; max-width: min(18ch, 100%); }
 .theme-btn, .menu-btn { flex: 0 0 auto; }
 @media (max-width: 480px) { .who__name { max-width: 100%; } }
+
+/* "Give from another chain": a live NEAR Intents price */
+.intents { margin-top: 22px; }
+.intents__out:empty { display: none; }
+.intents__out { margin-top: 18px; }
+.intents__big { font-size: 1.15rem; line-height: 1.45; margin: 0 0 8px; }

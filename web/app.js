@@ -190,6 +190,55 @@ function cheatSlip(storyKey = "family", { heading = "h2", tabs = true, whose = "
   </form>`;
 }
 
+/** A live NEAR Intents price for giving from another chain (a dry quote: nothing is sent). */
+const INTENTS_ROUTES = [
+  ["usdc-base", "USDC on Base"], ["usdc-sol", "USDC on Solana"], ["usdc-eth", "USDC on Ethereum"],
+  ["usdc-arb", "USDC on Arbitrum"], ["usdt-tron", "USDT on Tron"],
+];
+function intentsQuoteForm() {
+  return `
+  <form class="slip intents" data-intents aria-describedby="intents-hint">
+    <div class="slip__head"><h2>Give from another chain</h2><span class="slip__no">NEAR Intents · live</span></div>
+    <p class="small" id="intents-hint">A relative abroad can pay with what they already hold. NEAR Intents brings it to NEAR as USDC. Ask for a live price: it is a real mainnet quote from NEAR Intents, and nothing is sent.</p>
+    <label class="field"><span class="field__label">They pay with</span>
+      <select name="route">${INTENTS_ROUTES.map(([v, l]) => `<option value="${v}">${l}</option>`).join("")}</select></label>
+    <label class="field"><span class="field__label">Amount</span>
+      <span class="amount-row"><input name="amount" type="number" min="1" max="100000" step="0.01" inputmode="decimal" value="100"><span data-intents-unit>USDC</span></span></label>
+    <button class="button" type="submit">Get a price</button>
+    <div class="intents__out" data-intents-out aria-live="polite"></div>
+  </form>`;
+}
+async function askIntents(form) {
+  const out = form.querySelector("[data-intents-out]");
+  const route = form.route.value;
+  const amount = form.amount.value.trim();
+  out.innerHTML = `<p class="small">Asking NEAR Intents…</p>`;
+  try {
+    const r = await fetch("/api/intents", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ route, amount }) });
+    const q = await r.json().catch(() => ({}));
+    if (!r.ok || !q.amountOut) throw new Error(q.error || "");
+    const n = (v) => Number(v).toLocaleString("en-US", { maximumFractionDigits: 2 });
+    const secs = Number(q.seconds);
+    const time = secs > 0 ? (secs < 90 ? `about ${Math.max(1, Math.round(secs))} seconds` : `about ${Math.round(secs / 60)} minutes`) : "";
+    const at = new Date(q.at);
+    out.innerHTML = `
+      <p class="intents__big"><strong>${esc(n(q.amountIn))} ${esc(q.from)}</strong> → about <strong>${esc(n(q.amountOut))} USDC on NEAR</strong>${time ? `, in ${time}` : ""}.</p>
+      <p class="small">Live mainnet price from NEAR Intents${isNaN(at) ? "" : `, ${at.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`}. A dry quote: it prices the route and nothing is sent. On mainnet that USDC would go into the money box and be credited to the relative, as the stand-in shows above with test dollars.</p>`;
+  } catch (e) {
+    out.innerHTML = `<p class="small">Couldn't get a price from NEAR Intents right now${e.message ? ` (${esc(e.message)})` : ""}. Try again in a minute.</p>`;
+  }
+}
+document.addEventListener("submit", (e) => {
+  const form = e.target.closest && e.target.closest("[data-intents]");
+  if (!form) return;
+  e.preventDefault();
+  askIntents(form);
+});
+document.addEventListener("change", (e) => {
+  const form = e.target.closest && e.target.closest("[data-intents]");
+  if (form && e.target.name === "route") form.querySelector("[data-intents-unit]").textContent = e.target.value.startsWith("usdt") ? "USDT" : "USDC";
+});
+
 /** The "Try to cheat" choices for any box, worked out from the box itself. */
 function cheatFor(p, me) {
   const s = (n) => `${n}.${ROOT}`;
@@ -736,11 +785,12 @@ async function receiptPage(potId, index) {
   </article>`;
 }
 
-// Our three examples, shown first on the Money boxes page.
+// Our examples, shown first on the Money boxes page.
 const EXAMPLES = [
   { id: SPLIT, story: null, kicker: "School year", title: "A whole school year", blurb: "One box pays the school, a bookshop and a hostel, each only against its own bill, plus pocket money." },
   { id: LIVE.street, story: "street", kicker: "Street fund", title: "The street's transformer", blurb: "Neighbours chip in. Only their vote can pay the electrician, and never the chairman." },
   { id: LIVE.appeal, story: "appeal", kicker: "Give to a cause, not to a person", title: "A surgery appeal", blurb: "Anyone can give. Only the hospital and the pharmacy can be paid." },
+  { id: INTENTS_BOX, story: null, kicker: "From abroad · NEAR Intents", title: "Fees sent from abroad", blurb: "An uncle abroad gives through a go-between, and the box credits him, not the go-between. See a live NEAR Intents price for giving from another chain." },
 ];
 const exampleFor = (id) => EXAMPLES.find((e) => e.id === Number(id));
 
@@ -763,7 +813,7 @@ async function potsPage() {
   main.innerHTML = `
   <section class="page-head">
     <h1>Money boxes</h1>
-    <p class="lead">Every money box lives on NEAR testnet and is read live. Start with our three examples and try to cheat them. Boxes that people start show up underneath.</p>
+    <p class="lead">Every money box lives on NEAR testnet and is read live. Start with our examples and try to cheat them. Boxes that people start show up underneath.</p>
   </section>
   <section aria-labelledby="ex-h">
     <h2 id="ex-h" class="kicker">Our examples</h2>
@@ -856,6 +906,7 @@ async function potPage(id) {
     <p class="lead">This money can only go to ${esc(only)}, against their own bills. ${group ? "A vote of the group decides each payment." : p.releaser === currentAccount() ? "You pay the bills." : `${esc(cap(SAY[p.releaser] || nameOf(p.releaser)))} pays the bills.`} Whatever isn't used goes back to the givers.</p>
     ${cheatKey || ownCheat ? `<p class="jump"><a href="#cheat-box" data-jump="cheat-box">Try to cheat this box ↓</a></p>` : ""}
     ${p.id === INTENTS_BOX ? `<div class="demo"><span class="demo__tag">NEAR Intents</span> <strong>Given from abroad, the NEAR Intents way.</strong> NEAR Intents lets someone pay from another chain, like USDC on Base or Solana, and the money is delivered by a go-between. Here the go-between delivered 150 and named the uncle as the giver, so the box credited the uncle, not the go-between. It then delivered 100 more, but only 50 fitted the 200 target: the other 50 was kept for the uncle, not bounced back, and he took it out. NEAR Intents only runs on mainnet, so on testnet a stand-in account plays its part. <a href="${EXPLORER}/address/intents-relay.${ROOT}" target="_blank" rel="noopener">See the stand-in's transactions</a>.</div>` : ""}
+    ${p.id === INTENTS_BOX ? intentsQuoteForm() : ""}
     ${nextSteps(p)}
     <div class="split">
       <p><strong>${money(p.target)}</strong> can only go to ${esc(only)}.</p>
