@@ -971,3 +971,28 @@ a.acct:hover { color: var(--ink); }
 /* Box page: the left column holds The rules and Try to cheat, stacked */
 .pot-col { display: grid; gap: 32px; align-content: start; min-width: 0; }
 .intents--compact { margin-top: 10px; }
+
+/* The giving banner at the top of every box */
+.give-banner { margin: 22px 0 6px; padding: 18px 20px; background: var(--slip); color: var(--body); border-left: 6px solid var(--print); max-width: 760px; }
+.give-banner p { margin: 0 0 10px; font-size: 1.08rem; }
+.give-banner p:last-child { margin-bottom: 0; }
+.give-banner__bar { height: 10px; background: rgba(var(--rule-rgb), 0.15); margin: 4px 0 14px; }
+.give-banner__bar span { display: block; height: 100%; background: var(--print); }
+.give-banner--done { border-left-color: var(--violet); }
+
+/* Box 7's NEAR Intents note: one line, opened only by those who want the detail */
+.intents-note summary { cursor: pointer; list-style: none; }
+.intents-note summary::-webkit-details-marker { display: none; }
+.intents-note__more { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; white-space: nowrap; }
+.intents-note__more::before { content: "▸ "; text-decoration: none; display: inline-block; }
+.intents-note[open] .intents-note__more::before { content: "▾ "; }
+.intents-note p { margin: 10px 0 0; }
+
+/* Phones: nothing on a box page may be wider than the screen */
+.pot-grid { grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr); }
+.pot-grid > *, .pot-col > *, .slip { min-width: 0; }
+.slip small, .field__value, .rows td, .demo, .give-banner p { overflow-wrap: anywhere; }
+.key { flex-wrap: wrap; }
+@media (max-width: 880px) {
+  .pot-grid { grid-template-columns: minmax(0, 1fr); }
+}

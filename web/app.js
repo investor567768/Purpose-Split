@@ -872,6 +872,26 @@ function whereItWent(p, { compact = false } = {}) {
 }
 
 /** What each giver would get back if the box closed now: their share of what is still held. */
+/** The first thing on a box: can I give, and how much does it still need? */
+function giveBanner(p) {
+  const room = BigInt(p.target) - BigInt(p.raised);
+  if (p.status !== "Open" || p.deadline_passed) {
+    const why = p.status !== "Open"
+      ? "It's finished: its bills were paid and what was left went back to the givers."
+      : "Its deadline has passed, so the money that's left now goes back to the givers.";
+    return `<div class="give-banner give-banner--done"><p><strong>No longer taking contributions.</strong> ${why} It raised ${money(p.raised)} of its ${money(p.target)} target.</p></div>`;
+  }
+  if (room <= 0n) {
+    return `<div class="give-banner give-banner--done"><p><strong>Fully funded.</strong> This box has reached its ${money(p.target)} target, so it isn't taking more contributions. Thank you to everyone who gave.</p></div>`;
+  }
+  const pct = Math.round((Number(BigInt(p.raised) * 1000n / BigInt(p.target)) / 10));
+  return `<div class="give-banner">
+    <p><strong>This box still needs ${money(room)}.</strong> ${money(p.raised)} of ${money(p.target)} raised so far.</p>
+    <div class="give-banner__bar" aria-hidden="true"><span style="width:${pct}%"></span></div>
+    <p><button class="button" type="button" data-give-jump>Give to this box</button></p>
+  </div>`;
+}
+
 const backNow = (p, amount) => (BigInt(p.raised) > 0n ? ((BigInt(p.held) * BigInt(amount)) / BigInt(p.raised) / 10000n) * 10000n : 0n);
 
 async function potPage(id) {
@@ -911,7 +931,8 @@ async function potPage(id) {
     ${ex ? `<p class="kicker">${esc(ex.kicker)}</p>` : ""}
     <h1>${esc(titleOf(p))}</h1>
     <p class="lead">This money can only go to ${esc(only)}, against their own bills. ${group ? "A vote of the group decides each payment." : p.releaser === currentAccount() ? "You pay the bills." : `${esc(cap(SAY[p.releaser] || nameOf(p.releaser)))} pays the bills.`} Whatever isn't used goes back to the givers.</p>
-    ${p.id === INTENTS_BOX ? `<div class="demo"><span class="demo__tag">NEAR Intents</span> <strong>Given from abroad, the NEAR Intents way.</strong> NEAR Intents lets someone pay from another chain, like USDC on Base or Solana, and the money is delivered by a go-between. Here the go-between delivered 150 and named the uncle as the giver, so the box credited the uncle, not the go-between. It then delivered 100 more, but only 50 fitted the 200 target: the other 50 was kept for the uncle, not bounced back, and he took it out. NEAR Intents only runs on mainnet, so on testnet a stand-in account plays its part. <a href="${EXPLORER}/address/intents-relay.${ROOT}" target="_blank" rel="noopener">See the stand-in's transactions</a>.</div>` : ""}
+    ${giveBanner(p)}
+    ${p.id === INTENTS_BOX ? `<details class="demo intents-note"><summary><span class="demo__tag">NEAR Intents</span> <strong>Given from abroad, the NEAR Intents way</strong> <span class="intents-note__more">How it works</span></summary><p>NEAR Intents lets someone pay from another chain, like USDC on Base or Solana, and the money is delivered by a go-between. Here the go-between delivered 150 and named the uncle as the giver, so the box credited the uncle, not the go-between. It then delivered 100 more, but only 50 fitted the 200 target: the other 50 was kept for the uncle, not bounced back, and he took it out. NEAR Intents only runs on mainnet, so on testnet a stand-in account plays its part. <a href="${EXPLORER}/address/intents-relay.${ROOT}" target="_blank" rel="noopener">See the stand-in's transactions</a>.</p></details>` : ""}
     ${p.id === INTENTS_BOX ? intentsQuoteForm() : ""}
     ${nextSteps(p)}
     <div class="split">
@@ -1089,7 +1110,7 @@ async function renderActions(p) {
     const room = BigInt(p.target) - BigInt(p.raised);
     body += room > 0n
       ? `<details class="more give-more"><summary>Give to this box: it still needs ${money(room)}</summary>${me ? giveForm("Give") : signInFirst("give")}</details>${otherChain}`
-      : `<p class="small">This box has reached its target of ${money(p.target)}, so it takes no more gifts.</p>`;
+      : `<p class="small">This box has reached its target of ${money(p.target)}, so it takes no more contributions.</p>`;
   }
 
   // Everything else, out of the way.
@@ -1643,6 +1664,18 @@ menu.addEventListener("click", (e) => { if (e.target.closest("a")) closeMenu(); 
 document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeMenu(); });
 
 // ------------------------------------------------------------------ router
+
+// "Give to this box": open the give form in the action card and go to it.
+document.addEventListener("click", (e) => {
+  if (!e.target.closest("[data-give-jump]")) return;
+  const more = document.querySelector(".give-more");
+  if (more) more.open = true;
+  const target = more || document.querySelector("form[data-give]") || document.querySelector("[data-actions]");
+  if (!target) return;
+  target.scrollIntoView({ behavior: "smooth", block: "center" });
+  const input = target.querySelector("input[name=amount], button");
+  if (input) setTimeout(() => input.focus({ preventScroll: true }), 500);
+});
 
 // Links that jump down the same page, without changing the page's address.
 document.addEventListener("click", (e) => {
