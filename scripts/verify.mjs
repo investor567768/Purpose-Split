@@ -81,7 +81,7 @@ await check("The deployed code is exactly the code in this repository", async ()
   return { ok: acct.code_hash === mine, detail: `on chain ${acct.code_hash}, built here ${mine}` };
 });
 
-// Not a pass/fail check: the contract is deliberately not locked (see the README).
+// Not a pass/fail check: reports whether the contract account still has any key (see the README).
 {
   const keys = await rpc("query", { request_type: "view_access_key_list", finality: "final", account_id: POTS });
   console.log(`NOTE  Keys on the contract account: ${keys.keys.length}. ${keys.keys.length ? "It is not locked: whoever holds that key could deploy new code. The check above shows the code running now is the code in this repository." : "It is locked: nobody can change its code."}`);

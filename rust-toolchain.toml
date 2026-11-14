@@ -1,0 +1,5 @@
+# The Rust version the committed build/*.wasm files were built with.
+# With this version, scripts/build.sh rebuilds them byte for byte.
+[toolchain]
+channel = "1.97.0"
+targets = ["wasm32-unknown-unknown"]

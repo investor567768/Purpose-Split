@@ -12,13 +12,29 @@ Every claim below can be checked against the live chain with one command, `node 
 
 **Try it:** [purpose-split-web.vercel.app](https://purpose-split-web.vercel.app) (NEAR testnet, test dollars with no value)
 
-**Watch the demo (3 minutes):** [youtu.be/FnT44Iii2To](https://youtu.be/FnT44Iii2To)
+**Demo video (3 minutes):** [youtu.be/FnT44Iii2To](https://youtu.be/FnT44Iii2To) · **Demo post on X:** [x.com/kingChrys494](https://x.com/kingChrys494/status/2121581254512345185)
 
 <p>
 <img src="docs/home.png" alt="The Purpose Split homepage" width="49%">
 <img src="docs/refused.png" alt="Try to cheat: sending the school fees to a betting site is refused by the contract" width="24%">
 <img src="docs/pass.png" alt="A Fees paid pass, issued when the school confirmed the payment" width="24%">
 </p>
+
+## For judges, start here
+
+No wallet, no sign-in and no money needed. Each step says what to do and what you will see.
+
+| | Do this | You see |
+|---|---|---|
+| 1 | From a clone of this repo, run `node scripts/verify.mjs` (Node 18+, nothing to install). | 18 lines, each starting `PASS`, then `18/18 checks passed`. It checks this README's claims live on NEAR testnet: the code on chain is the code here, only the council's DAO holds the verified list, the books balance, the pass and `has_paid` work, and five cheating attempts are refused. |
+| 2 | Open the [homepage](https://purpose-split-web.vercel.app), choose "The student" and "A betting site", press **Try it**. | **Refused**, with the contract's own reason: the betting site is not on the verified list. It is a live answer from the contract's `why_refused` view. |
+| 3 | Open [the student's passes](https://purpose-split-web.vercel.app/#/pass/tolu.purposesplit.testnet). | "Fees paid: Lagos Lagoon University", 280 tUSD, confirmed by the school: an NFT that can't be moved, created only by the school's confirmation. |
+| 4 | Open [Payees](https://purpose-split-web.vercel.app/#/payees). | The verified list, held by a Sputnik DAO, and the proposal that added Unity Hall Caterers with each councillor's vote, read live from the DAO. |
+| 5 | Open [box 7](https://purpose-split-web.vercel.app/#/pot/7) and press **Get a price**. | A live mainnet price from NEAR Intents for giving from another chain. A dry quote: nothing is sent. |
+| 6 | Open [Proof](https://purpose-split-web.vercel.app/#/proof). | The recorded test run on the final contract: 85 steps, 20 cheating attempts refused, each with its transaction, and the books balanced live. |
+| 7 | Run `cargo test`. | 97 tests passed: every rule, every cheat, the pass, the handover to the council, and gifts through NEAR Intents. |
+
+More below: [do it with your own wallet](#try-it-yourself-no-wallet-needed-for-the-first-four) · [every claim and how to check it](#check-every-claim-yourself) · [what is live and what isn't](#status-14-nov) · [track fit](#why-it-fits-its-tracks) · [honest limitations](#honest-limitations)
 
 ## The problem
 
@@ -108,7 +124,7 @@ What it doesn't do: a pass doesn't own money, earn or hold items. It is proof, n
 
 - **Named accounts.** Families see `llu.purposesplit.testnet`, not `0x7a3f…`, so they can tell who is being paid.
 - **Sputnik DAO.** The payee council and the street's vote are real DAOs made with NEAR's own DAO factory, not a multisig of ours.
-- **Limited keys.** A NEAR key can be restricted to a few contract methods. The demo school's key can only send bills and confirm payments; it can't move money. That is why any visitor can "play the school" on the website, with nothing to install.
+- **Limited keys.** A NEAR key can be restricted to a few contract methods. The demo school's key can only send bills and confirm payments; it can't move money. That is why any visitor can "play the school" on the example boxes, with nothing to install. On a box someone else made, only its creator or payer can.
 - **Standard tokens.** Money is NEP-141, passes are NEP-171 NFTs that refuse to move, and every action emits NEP-297 events.
 - **Free views.** Anyone can ask the contract why a payment would be refused (`why_refused`), with no wallet and no fee. That powers "Try to cheat".
 - **NEAR Intents ready.** Through Intents, tokens arrive from `intents.near`, not from the person paying. The money box takes the real giver from the delivery message (`{"pot_id": 7, "giver": "uncle.near"}`) and credits the gift and any refund to them. It never bounces tokens back to the go-between: anything that can't go in the box is kept as owed to the giver, to withdraw any time. Intents runs only on mainnet, so on testnet a stand-in account plays `intents.near` (`node scripts/intents-sim.mjs`, recorded in `proof/intents-sim.json`, box 7); 7 tests cover it. Box 7 also asks NEAR Intents for a **live mainnet price**: under **Give from another chain**, pick what a relative abroad holds (USDC on Base, Solana, Ethereum or Arbitrum, or USDT on Tron) and see what would arrive as USDC on NEAR. It is a dry quote from the 1Click API (`web/api/intents.js`), so it prices the route and sends nothing. **It only gets prices:** NEAR Intents doesn't work on testnet, so no money can be sent through it here. The same price check sits under the Give button on every box that can still take gifts.
@@ -133,16 +149,16 @@ These are examples. The same rules work for any purpose with a named payee: rent
 | [2](https://purpose-split-web.vercel.app/#/pot/2) | Surgery appeal, finished: paid only the hospital and the pharmacy |
 | [3](https://purpose-split-web.vercel.app/#/pot/3) | School fees, open: the homepage's "Try to cheat" box |
 | [4](https://purpose-split-web.vercel.app/#/pot/4) | Street fund, open: only a vote of the street can pay |
-| [5](https://purpose-split-web.vercel.app/#/pot/5) | Surgery appeal, open: anyone can give |
+| [5](https://purpose-split-web.vercel.app/#/pot/5) | Surgery appeal, open and fully funded: waiting for the hospital's bill |
 | [6](https://purpose-split-web.vercel.app/#/pot/6) | A whole school year: the school, a bookshop and a hostel, each only against its own bill, plus a labelled pocket-money part |
 | [7](https://purpose-split-web.vercel.app/#/pot/7) | A gift from abroad through a stand-in for NEAR Intents, credited to the real giver, plus a live NEAR Intents price for giving from another chain |
 
 ## Try it yourself (no wallet needed for the first four)
 
 1. **Try to cheat.** Open the [homepage](https://purpose-split-web.vercel.app), choose "The student" and "A betting site", press **Try it** → *Refused: "A betting site is not on the verified list. This money box pays only Lagos Lagoon University."* The answer comes from the contract's own `why_refused` view, live.
-2. **Check a pass.** Menu → **Check a pass** → `tolu.purposesplit.testnet` → *a "Fees paid: Lagos Lagoon University" pass, 280 tUSD, confirmed by the school.*
+2. **Check a pass.** Menu → **Check a pass** → `tolu.purposesplit.testnet` → *his passes, including "Fees paid: Lagos Lagoon University", 280 tUSD, confirmed by the school.*
 3. **See a vote.** Menu → **Payees** → *the verified list held by `purposesplit-council.sputnik-v2.testnet`, and proposal 1 to add Unity Hall Caterers with each councillor's vote, read live from the DAO.*
-4. **Price a gift from abroad.** Open [box 7](https://purpose-split-web.vercel.app/#/pot/7), go to **Give from another chain**, choose *USDC on Base* and *100*, press **Get a price** → *a live mainnet price from NEAR Intents: about how much USDC on NEAR would arrive, and how long it takes. Nothing is sent.*
+4. **Price a gift from abroad.** Open [box 7](https://purpose-split-web.vercel.app/#/pot/7), go to **Give from another chain**, choose *USDC on Base*, leave the amount, press **Get a price** → *a live mainnet price from NEAR Intents: about how much USDC on NEAR would arrive, and how long it takes. Nothing is sent.*
 5. **Do it for real.** Sign in with a testnet wallet (Meteor, MyNearWallet, HOT, Nightly or Intear), press **Get 500 test dollars** on **How to try it**, start a money box naming Lagos Lagoon University, give to it, then follow the box's **Next** card: **Send a bill as Lagos Lagoon University** (a demo shortcut, since the school is made up), **Pay** it yourself, then **Confirm as Lagos Lagoon University**. Menu → **Check a pass** → your account → *your own "Fees paid" pass.*
 6. **Keep the records.** On any box, press **Download for your records (CSV)** → *every gift, bill, payment and confirmation with its amount, and the date of each bill, payment and confirmation (the contract doesn't record when a gift was made).*
 7. **Check it all at once.** With Node 18 or newer, from the repository folder: `node scripts/verify.mjs` → *18/18 checks passed, read live from testnet. No install, no keys, no wallet.*
@@ -158,7 +174,7 @@ These are examples. The same rules work for any purpose with a named payee: rent
 | A pass cannot be faked, sold or lent | Tolu confirming his own payment and Tolu giving his pass away are both refused in the test run; `nft_transfer` always refuses |
 | The books balance | The test run ends with the contract's token balance equal to what its boxes hold plus what it owes |
 | A gift through NEAR Intents is credited to the real giver, never bounced | Box 7 on the website; `proof/intents-sim.json`; `node scripts/verify.mjs` |
-| The code on chain is the code in this repository | `node scripts/verify.mjs` compares the contract's code hash with `build/purpose_split.wasm`, which `scripts/build.sh` rebuilds byte for byte |
+| The code on chain is the code in this repository | `node scripts/verify.mjs` compares the contract's code hash with `build/purpose_split.wasm`, which `scripts/build.sh` rebuilds byte for byte with the Rust version pinned in `rust-toolchain.toml` |
 | Every rule has a test | `cargo test`: 97 tests |
 
 **Five transactions to open in the explorer**, from the recorded test run on the final contract:
@@ -175,7 +191,7 @@ These are examples. The same rules work for any purpose with a named payee: rent
 
 | Part | State |
 |---|---|
-| Money box contract, with its rules, refunds and passes | **Live** on testnet; the code on chain matches this repository |
+| Money box contract, with its rules, refunds and passes | **Live** on testnet and **locked**: the account has no keys, and the code on chain matches this repository |
 | Payee council and street votes | **Live**, two real Sputnik DAOs |
 | The pass and the `has_paid` check | **Live** |
 | Website | **Live**, reads and writes the testnet contract |
@@ -184,7 +200,7 @@ These are examples. The same rules work for any purpose with a named payee: rent
 | Mainnet, real payees, local currency in and out | **Not built yet** (see the roadmap) |
 
 
-- The final contract is [`pots.purposesplit.testnet`](https://testnet.nearblocks.io/address/pots.purposesplit.testnet) (version 0.4.0). The website and `verify.mjs` read it live.
+- The final contract is [`pots.purposesplit.testnet`](https://testnet.nearblocks.io/address/pots.purposesplit.testnet) (version 0.4.0). The website and `verify.mjs` read it live. It is locked: its only key was [deleted](https://testnet.nearblocks.io/txns/88cgeHtN8mbwNdpaHDFhjUDdUTVP3HTEebFDsY8FceYF), so its code can never change.
 - The money box contract and the test-dollar token: 97 tests covering every rule, every cheating attempt, the pass, the handover to the council and gifts through NEAR Intents.
 - The two Sputnik DAOs are live, made with NEAR's own DAO factory: the payee council ([`purposesplit-council.sputnik-v2.testnet`](https://testnet.nearblocks.io/address/purposesplit-council.sputnik-v2.testnet)), with one real person on it, and the street ([`adeyemi-street.sputnik-v2.testnet`](https://testnet.nearblocks.io/address/adeyemi-street.sputnik-v2.testnet)), with five neighbours.
 - The full test run on the final contract: 85 steps, all 20 cheating attempts refused, real DAO proposals and votes, and the books balance. Every step and its transaction is in `proof/demo-final.json` and on the website's Proof page. The contract was then upgraded, with its state unchanged, to 0.3.0 to add NEAR Intents gifts and to 0.4.0 to add the `has_paid` access check, and box 7 was given to through a stand-in for Intents (`proof/intents-sim.json`). An earlier practice run on `pots-dev7.purposesplit.testnet` is kept in `proof/demo-dev.json`.
@@ -198,6 +214,7 @@ cd scripts && npm install
 ./build.sh                      # builds both contracts into build/
 node daos.mjs                   # the two Sputnik DAOs (already made; safe to run again)
 node verify.mjs                 # checks the README's claims on testnet, live (no keys, no wallet)
+node lock.mjs pots --yes        # how the contract was locked: deletes every key on its account (cannot be undone)
 node demo.mjs final             # the three stories on testnet, with real DAO votes (needs testnet keys)
 node intents-sim.mjs            # a gift through a stand-in for NEAR Intents (needs testnet keys)
 ```
@@ -233,13 +250,13 @@ web-src/      the bundle for NEAR Wallet Selector
 
 ## Honest limitations
 
-- **Test dollars only.** A real launch would use USDC on NEAR and a naira on-ramp.
+- **Test dollars only.** A real launch would use USDC on NEAR, with a way to pay in and cash out in local currency.
 - **The payees are made up.** No school in Nigeria has a NEAR account today, so the schools, hospital, pharmacy, electrician and people in the demo are invented, and their evidence links use the reserved `.example` domain. The rules, the votes and the money movements are real.
 - **One council seat is held by the build,** so the test run can cast the first vote. The second seat is a real person's wallet, and the build holds no key for it, so nothing passes without that person's vote.
-- **Not locked.** The deployer still holds the contract's key, so a bug found during the hackathon can be fixed. That key could also deploy new code, so for now you trust that it won't; `verify.mjs` shows the running code matches this repository and reports the key. A real launch would delete the key, after which nobody could change the rules.
+- **Locked, so it cannot be patched.** The contract's only key was deleted on 14 Nov 2026 ([transaction](https://testnet.nearblocks.io/txns/88cgeHtN8mbwNdpaHDFhjUDdUTVP3HTEebFDsY8FceYF)), so nobody, including us, can deploy new code or change the rules. `verify.mjs` reports that the account has no keys and that the running code matches this repository. The cost is that a bug found now cannot be fixed in place; a fix would mean a new contract at a new address. The council can still add or remove verified payees by vote, which is by design.
 - **Not audited.** Built and tested in a hackathon.
 - **NEAR Intents: live prices, no live payments.** Intents runs only on mainnet, so on this testnet demo the website uses it only to get prices. Box 7 shows live mainnet prices (dry quotes, which send nothing), and the contract's handling of Intents deliveries is shown on testnet with a stand-in. No real cross-chain payment has been made, because there is no mainnet deployment yet.
-- **Not built yet:** a naira on-ramp, real schools on the list, and gasless confirmations for payees through meta transactions.
+- **Not built yet:** paying in and cashing out in local currency, real payees on the list, and gasless confirmations for payees through meta transactions.
 
 ## Roadmap
 
@@ -247,7 +264,7 @@ web-src/      the bundle for NEAR Wallet Selector
 2. **Real NEAR Intents giving.** Relatives abroad pay from Base, Solana, Ethereum or Bitcoin in one step. The contract already credits Intents gifts to the real giver (tested, and shown on testnet with a stand-in in box 7).
 3. **Real payees.** Schools, hospitals and vendors publish their NEAR account and are voted onto the list.
 4. **Local currency in and out.** Families give from a bank account or card, and payees cash out to their own currency.
-5. **Lock the contract** by deleting its key once it is settled, so nobody can ever change the rules.
+5. **Lock the mainnet contract** the same way the testnet one is locked: delete its key once it is audited and settled.
 6. **Gasless confirmations,** so payees don't need NEAR to send a bill or confirm.
 
 ## Built with

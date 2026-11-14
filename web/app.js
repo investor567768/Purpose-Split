@@ -390,7 +390,7 @@ const QUESTIONS = [
   ["How do you know the account really belongs to the school?", "The contract can't know that by itself, so the list has to be trustworthy. A school is added only by a council vote, and only with a link to where the school itself publishes its account. You see that link before you send. If a school is ever removed, families can take their money back at once."],
   ["How does a school, hospital or shop get onboarded?", "It makes a free NEAR account and shows that account on a page it already runs, such as its website or official social media, the way businesses print their bank account today. Anyone then proposes it on the <a href=\"#/payees\">Payees page</a> with that link, and the payee council checks the link and votes. Once the vote passes, money boxes can name it, and it sends its bills and confirms payments from its own account. On mainnet it would be paid in USDC; cashing out to naira or another local currency is on our roadmap."],
   ["Do families need crypto to use it?", "On this testnet demo, yes: giving needs a NEAR testnet wallet, and <a href=\"#/try\">How to try it</a> takes about five minutes. In real use, givers would still need a NEAR account, so refunds have somewhere to go, but they won't need to hold NEAR: through NEAR Intents they can pay with what they already have on other chains, such as USDT on Tron (see the live price under Give on any box), and an app can cover NEAR's small network fees for them. Paying in with a bank account or card, in local currency, is on our roadmap."],
-  ["Can the people who built this take the money?", "The contract has no function that sends a box's money anywhere except its named payees, its stated free part, or back to the givers. This contract is not locked yet: we kept its key so we could fix a bug during the hackathon. Anyone can check that the code running now is exactly the open-source code, and a real launch would delete the key so nobody could change it."],
+  ["Can the people who built this take the money?", "The contract has no function that sends a box's money anywhere except its named payees, its stated free part, or back to the givers. The contract is locked: its only key has been deleted, so nobody, including us, can change its code. Anyone can check that the code running is exactly the open-source code."],
   ["Why NEAR?", "Several things here work because it's NEAR. Accounts have names, like llu.purposesplit.testnet, so families can see who is being paid instead of a long code. The verified list of payees and the street's vote run on Sputnik DAO, NEAR's DAO system. A NEAR key can be limited to a few actions, which is how you can play the school on this site: its key can send bills and confirm payments, but can't move money. Passes are standard NEAR NFTs. And the money box is ready for NEAR Intents, so a relative abroad can give from another chain: the contract credits the gift and any refund to the real giver. Intents runs only on mainnet, so here the gift is shown with a stand-in, and the website shows live NEAR Intents prices. <a href=\"#/pot/7\">See a gift from abroad</a>."],
   ["What does it cost?", "We charge nothing. Each action is a NEAR transaction with a network fee well under a cent, and creating a money box needs a small one-time storage deposit in NEAR."],
   ["Can I check all this?", `Yes. Every step of the test run is on the public explorer, the books are checked live, and the contract is open source with a test for every rule. <a href="#/proof">Open the proof page</a>.`],
@@ -1593,9 +1593,9 @@ async function proofPage() {
         <div class="slip__head"><h2 id="accounts-h">The accounts</h2></div>
         ${field("The contract", acct(POTS))}
         ${field("Test dollars (no value)", acct(TOKEN))}
-        ${field("School-list council", acct(COUNCIL_DAO))}
+        ${field("The payee council", acct(COUNCIL_DAO))}
         ${field("The street", acct(STREET_DAO))}
-        <p class="small">Two Sputnik DAOs hold the verified list and the street's vote. The contract is not locked yet: we kept its key to fix bugs during the hackathon. Running <code>node scripts/verify.mjs</code> checks that the code on chain is exactly the code in the repository.</p>
+        <p class="small">Two Sputnik DAOs hold the verified list and the street's vote. The contract is locked: its only key was <a href="https://testnet.nearblocks.io/txns/88cgeHtN8mbwNdpaHDFhjUDdUTVP3HTEebFDsY8FceYF" target="_blank" rel="noopener">deleted</a>, so nobody can change its code. Running <code>node scripts/verify.mjs</code> checks that the code on chain is exactly the code in the repository.</p>
       </section>
     </div>
   </div>`;
@@ -1732,5 +1732,28 @@ document.getElementById("foot-check").innerHTML = `
   <li><a href="#/proof">Every step of the test run</a></li>
   <li><a href="${EXPLORER}/address/${POTS}" target="_blank" rel="noopener">The contract on NearBlocks</a></li>
   ${GITHUB ? `<li><a href="${GITHUB}" target="_blank" rel="noopener">Source code</a></li>` : ""}`;
+// Reveal on scroll: cards fade in and rise a little as they come into view.
+// Safe by design: without this script, with reduced motion, or if anything goes wrong, everything is simply visible.
+(() => {
+  const calm = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if (calm || !("IntersectionObserver" in window) || !("MutationObserver" in window)) return;
+  const PICK = ".slip, .pot-card, .give-banner, .howto > li, .section > h2, .foot__grid > div";
+  const io = new IntersectionObserver((entries) => {
+    for (const e of entries) if (e.isIntersecting) { e.target.classList.add("rv--in"); io.unobserve(e.target); }
+  }, { rootMargin: "0px 0px -6% 0px", threshold: 0.04 });
+  const arm = (root) => {
+    const found = root.matches && root.matches(PICK) ? [root] : [];
+    for (const el of [...found, ...(root.querySelectorAll ? root.querySelectorAll(PICK) : [])]) {
+      if (el.classList.contains("rv") || el.closest(".menu")) continue;
+      el.classList.add("rv");
+      io.observe(el);
+      setTimeout(() => el.classList.add("rv--in"), 3000); // never leave anything hidden
+    }
+  };
+  new MutationObserver((list) => { for (const m of list) for (const n of m.addedNodes) if (n.nodeType === 1) arm(n); })
+    .observe(document.body, { childList: true, subtree: true });
+  arm(document.body);
+})();
+
 window.addEventListener("hashchange", route);
 route();
