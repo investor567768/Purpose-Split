@@ -967,3 +967,7 @@ a.acct:hover { color: var(--ink); }
 .intents__out:empty { display: none; }
 .intents__out { margin-top: 18px; }
 .intents__big { font-size: 1.15rem; line-height: 1.45; margin: 0 0 8px; }
+
+/* Box page: the left column holds The rules and Try to cheat, stacked */
+.pot-col { display: grid; gap: 32px; align-content: start; min-width: 0; }
+.intents--compact { margin-top: 10px; }

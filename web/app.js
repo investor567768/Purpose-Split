@@ -195,15 +195,18 @@ const INTENTS_ROUTES = [
   ["usdc-base", "USDC on Base"], ["usdc-sol", "USDC on Solana"], ["usdc-eth", "USDC on Ethereum"],
   ["usdc-arb", "USDC on Arbitrum"], ["usdt-tron", "USDT on Tron"],
 ];
-function intentsQuoteForm() {
+function intentsQuoteForm(compact = false) {
+  const head = compact
+    ? `<p class="small">This shows what a gift from another chain would cost on mainnet, through NEAR Intents. It is a live price and nothing is sent. In this testnet demo, you give test dollars with the Give button.</p>`
+    : `<div class="slip__head"><h2>Give from another chain</h2><span class="slip__no">NEAR Intents · live</span></div>
+    <p class="small">A relative abroad can pay with what they already hold. NEAR Intents brings it to NEAR as USDC. Ask for a live price: it is a real mainnet quote from NEAR Intents, and nothing is sent.</p>`;
   return `
-  <form class="slip intents" data-intents aria-describedby="intents-hint">
-    <div class="slip__head"><h2>Give from another chain</h2><span class="slip__no">NEAR Intents · live</span></div>
-    <p class="small" id="intents-hint">A relative abroad can pay with what they already hold. NEAR Intents brings it to NEAR as USDC. Ask for a live price: it is a real mainnet quote from NEAR Intents, and nothing is sent.</p>
+  <form class="${compact ? "mini intents--compact" : "slip intents"}" data-intents>
+    ${head}
     <label class="field"><span class="field__label">They pay with</span>
       <select name="route">${INTENTS_ROUTES.map(([v, l]) => `<option value="${v}">${l}</option>`).join("")}</select></label>
     <label class="field"><span class="field__label">Amount</span>
-      <span class="amount-row"><input name="amount" type="number" min="1" max="100000" step="0.01" inputmode="decimal" value="100"><span data-intents-unit>USDC</span></span></label>
+      <span class="amount-row"><input name="amount" type="number" min="1" max="100000" step="0.01" inputmode="decimal" value="200"><span data-intents-unit>USDC</span></span></label>
     <button class="button" type="submit">Get a price</button>
     <div class="intents__out" data-intents-out aria-live="polite"></div>
   </form>`;
@@ -223,9 +226,10 @@ async function askIntents(form) {
     const at = new Date(q.at);
     out.innerHTML = `
       <p class="intents__big"><strong>${esc(n(q.amountIn))} ${esc(q.from)}</strong> → about <strong>${esc(n(q.amountOut))} USDC on NEAR</strong>${time ? `, in ${time}` : ""}.</p>
-      <p class="small">Live mainnet price from NEAR Intents${isNaN(at) ? "" : `, ${at.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`}. A dry quote: it prices the route and nothing is sent. On mainnet that USDC would go into the money box and be credited to the relative, as the stand-in shows above with test dollars.</p>`;
+      <p class="small">Live mainnet price from NEAR Intents${isNaN(at) ? "" : `, ${at.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`}. A dry quote: it prices the route and nothing is sent. ${form.classList.contains("intents--compact") ? "On mainnet that USDC would go into this box and count as the giver's gift." : "On mainnet that USDC would go into the money box and be credited to the relative, as the stand-in shows above with test dollars."}</p>`;
   } catch (e) {
-    out.innerHTML = `<p class="small">Couldn't get a price from NEAR Intents right now${e.message ? ` (${esc(e.message)})` : ""}. Try again in a minute.</p>`;
+    const tooSmall = /minimum/i.test(e.message || "");
+    out.innerHTML = `<p class="small">Couldn't get a price from NEAR Intents${tooSmall ? "" : " right now"}${e.message ? ` (${esc(e.message)})` : ""}. ${tooSmall ? "Try a larger amount." : "Try again in a minute."}</p>`;
   }
 }
 document.addEventListener("submit", (e) => {
@@ -301,7 +305,7 @@ function wireCheat(form, own) {
     to.innerHTML = c.destinations.map((d) => `<option value="${esc(d.id)}">${esc(d.label)}</option>`).join("");
     amount.value = c.amount;
     action.value = "send";
-    potNo.innerHTML = `<a href="#/pot/${c.pot}">Money box no. ${c.pot}</a>`;
+    potNo.innerHTML = location.hash === `#/pot/${c.pot}` ? "" : `<a href="#/pot/${c.pot}">See this box</a>`;
     form.querySelector("[data-ideas]").innerHTML = ideasOf(key).map((t) => `<li>${esc(t)}</li>`).join("");
     form.querySelector("[data-ideas-n]").textContent = `(${ideasOf(key).length})`;
     showFields();
@@ -384,8 +388,10 @@ const QUESTIONS = [
   ["Can the student send the money anywhere else?", "No. The money box pays only the school named on it, and only against a bill the school itself sent. Try it above: every other destination is refused."],
   ["What is the pass?", `When the school confirms it was paid, the contract gives the student a "Fees paid" pass. Nobody can make one any other way, and it can't be sold or lent to a friend. Anyone can check it, for example before an exam or at the hostel gate, and another system can ask the contract directly whether a student has paid a school, and get a yes or no. <a href="#/pass">Check a pass</a>.`],
   ["How do you know the account really belongs to the school?", "The contract can't know that by itself, so the list has to be trustworthy. A school is added only by a council vote, and only with a link to where the school itself publishes its account. You see that link before you send. If a school is ever removed, families can take their money back at once."],
+  ["How does a school, hospital or shop get onboarded?", "It makes a free NEAR account and shows that account on a page it already runs, such as its website or official social media, the way businesses print their bank account today. Anyone then proposes it on the <a href=\"#/payees\">Payees page</a> with that link, and the payee council checks the link and votes. Once the vote passes, money boxes can name it, and it sends its bills and confirms payments from its own account. On mainnet it would be paid in USDC; cashing out to naira or another local currency is on our roadmap."],
+  ["Do families need crypto to use it?", "On this testnet demo, yes: giving needs a NEAR testnet wallet, and <a href=\"#/try\">How to try it</a> takes about five minutes. In real use, givers would still need a NEAR account, so refunds have somewhere to go, but they won't need to hold NEAR: through NEAR Intents they can pay with what they already have on other chains, such as USDT on Tron (see the live price under Give on any box), and an app can cover NEAR's small network fees for them. Paying in with a bank account or card, in local currency, is on our roadmap."],
   ["Can the people who built this take the money?", "The contract has no function that sends a box's money anywhere except its named payees, its stated free part, or back to the givers. This contract is not locked yet: we kept its key so we could fix a bug during the hackathon. Anyone can check that the code running now is exactly the open-source code, and a real launch would delete the key so nobody could change it."],
-  ["Why NEAR?", "Several things here work because it's NEAR. Accounts have names, like llu.purposesplit.testnet, so families can see who is being paid instead of a long code. The verified list of payees and the street's vote run on Sputnik DAO, NEAR's DAO system. A NEAR key can be limited to a few actions, which is how you can play the school on this site: its key can send bills and confirm payments, but can't move money. Passes are standard NEAR NFTs. And the money box is ready for NEAR Intents, so a relative abroad can give from another chain: the contract credits the gift and any refund to the real giver. Intents runs only on mainnet, so here it is shown with a stand-in. <a href=\"#/pot/7\">See a gift from abroad</a>."],
+  ["Why NEAR?", "Several things here work because it's NEAR. Accounts have names, like llu.purposesplit.testnet, so families can see who is being paid instead of a long code. The verified list of payees and the street's vote run on Sputnik DAO, NEAR's DAO system. A NEAR key can be limited to a few actions, which is how you can play the school on this site: its key can send bills and confirm payments, but can't move money. Passes are standard NEAR NFTs. And the money box is ready for NEAR Intents, so a relative abroad can give from another chain: the contract credits the gift and any refund to the real giver. Intents runs only on mainnet, so here the gift is shown with a stand-in, and the website shows live NEAR Intents prices. <a href=\"#/pot/7\">See a gift from abroad</a>."],
   ["What does it cost?", "We charge nothing. Each action is a NEAR transaction with a network fee well under a cent, and creating a money box needs a small one-time storage deposit in NEAR."],
   ["Can I check all this?", `Yes. Every step of the test run is on the public explorer, the books are checked live, and the contract is open source with a test for every rule. <a href="#/proof">Open the proof page</a>.`],
 ];
@@ -869,9 +875,9 @@ function whereItWent(p, { compact = false } = {}) {
 const backNow = (p, amount) => (BigInt(p.raised) > 0n ? ((BigInt(p.held) * BigInt(amount)) / BigInt(p.raised) / 10000n) * 10000n : 0n);
 
 async function potPage(id) {
-  setTitle(`Money box no. ${id}`);
+  setTitle("Money box");
   markNav("pots");
-  main.innerHTML = `<p class="loading">Reading money box no. ${esc(id)} from NEAR testnet…</p>`;
+  main.innerHTML = `<p class="loading">Reading the money box from NEAR testnet…</p>`;
   let p;
   try {
     ({ value: p } = await view(POTS, "get_pot", { pot_id: Number(id) }));
@@ -880,9 +886,10 @@ async function potPage(id) {
     return;
   }
   if (!p) {
-    main.innerHTML = `<section class="page-head"><h1>There is no money box no. ${esc(id)}</h1><p class="lead"><a href="#/pots">See all the money boxes</a></p></section>`;
+    main.innerHTML = `<section class="page-head"><h1>There is no such money box</h1><p class="lead"><a href="#/pots">See all the money boxes</a></p></section>`;
     return;
   }
+  setTitle(titleOf(p));
   const group = p.kind === "Group";
   const only = either(p.payees.map(payeeName));
   const hasFree = BigInt(p.free_target) > 0n;
@@ -904,7 +911,6 @@ async function potPage(id) {
     ${ex ? `<p class="kicker">${esc(ex.kicker)}</p>` : ""}
     <h1>${esc(titleOf(p))}</h1>
     <p class="lead">This money can only go to ${esc(only)}, against their own bills. ${group ? "A vote of the group decides each payment." : p.releaser === currentAccount() ? "You pay the bills." : `${esc(cap(SAY[p.releaser] || nameOf(p.releaser)))} pays the bills.`} Whatever isn't used goes back to the givers.</p>
-    ${cheatKey || ownCheat ? `<p class="jump"><a href="#cheat-box" data-jump="cheat-box">Try to cheat this box ↓</a></p>` : ""}
     ${p.id === INTENTS_BOX ? `<div class="demo"><span class="demo__tag">NEAR Intents</span> <strong>Given from abroad, the NEAR Intents way.</strong> NEAR Intents lets someone pay from another chain, like USDC on Base or Solana, and the money is delivered by a go-between. Here the go-between delivered 150 and named the uncle as the giver, so the box credited the uncle, not the go-between. It then delivered 100 more, but only 50 fitted the 200 target: the other 50 was kept for the uncle, not bounced back, and he took it out. NEAR Intents only runs on mainnet, so on testnet a stand-in account plays its part. <a href="${EXPLORER}/address/intents-relay.${ROOT}" target="_blank" rel="noopener">See the stand-in's transactions</a>.</div>` : ""}
     ${p.id === INTENTS_BOX ? intentsQuoteForm() : ""}
     ${nextSteps(p)}
@@ -922,9 +928,10 @@ async function potPage(id) {
       <button class="button button--quiet" type="button" data-csv>Download for your records (CSV)</button>
     </p>
   </section>
-  <div class="pot-grid">
+  <div class="pot-grid section">
+    <div class="pot-col">
     <article class="slip ${group ? "slip--yellow" : ""}">
-      <div class="slip__head"><h2>The rules</h2><span class="slip__no">Money box no. ${p.id}</span></div>
+      <div class="slip__head"><h2>The rules</h2></div>
       ${p.payees.map((x) => field("Can be paid", `${esc(payeeName(x))} <small>${acct(x.account_id)} ${x.verified ? '<span class="check">on the verified list</span>' : "(no longer verified)"}</small><small>${evidenceLine(x)}</small>`)).join("")}
       ${field(group ? "Who decides each payment" : "Who pays the bills", `${esc(nameOf(p.releaser))} <small>${acct(p.releaser)}</small>`)}
       ${field("If the target isn't reached", p.all_or_nothing ? "Nothing is paid, and everyone gets everything back" : "Bills can be paid from what has been raised")}
@@ -946,6 +953,8 @@ async function potPage(id) {
       ${field("Raised, of the target", `${money(p.raised)} of ${money(p.target)}`)}
       ${hasFree ? field(`${esc(p.free_label)}, sent straight to ${esc(nameOf(p.free_to))}`, `${money(p.free_sent)} of ${money(p.free_target)}`) : ""}
     </article>
+    ${cheatKey || ownCheat ? `<section id="cheat-box" aria-label="Try to cheat this box">${cheatSlip(cheatKey || "own", { heading: "h2", tabs: false, whose: p.creator.endsWith(`.${ROOT}`) ? "demo" : p.creator === currentAccount() ? "yours" : "this" })}</section>` : ""}
+    </div>
 
     <div style="display:grid;gap:32px">
       <section class="slip" aria-labelledby="who-gave">
@@ -973,7 +982,7 @@ async function potPage(id) {
       </section>
     </div>
   </div>
-  ${cheatKey || ownCheat ? `<section class="section" id="cheat-box" aria-label="Try to cheat this box"><div class="pot-grid">${cheatSlip(cheatKey || "own", { heading: "h2", tabs: false, whose: p.creator.endsWith(`.${ROOT}`) ? "demo" : p.creator === currentAccount() ? "yours" : "this" })}<aside class="prose"><h3>Try to spend this box's money on something else</h3><p>Pick who is trying and where they send the money. The real contract on NEAR answers, with its reason. Nothing is sent and no wallet is needed.</p></aside></div></section>` : ""}`;
+`;
   if (cheatKey || ownCheat) wireCheat(main.querySelector("form[data-story]"), ownCheat || undefined);
   renderActions(p);
   main.querySelector("[data-csv]").addEventListener("click", () => downloadCsv(p));
@@ -1064,8 +1073,23 @@ async function renderActions(p) {
       ? `<p>The payee confirmed it was paid, and the pass was issued. <a href="#/pass/${esc(p.releaser)}">See the pass</a>.</p><p>There is still ${money(p.held)} in the box. It can pay another bill, and what's left goes back to the givers after the deadline.</p>`
       : `<p>There is ${money(p.held)} in the box. Nothing can leave until ${esc(either(p.payees.map(payeeName)))} asks for it with a bill.</p>`;
     if (isPayee(me)) body += billForm(me, false);
-    else if (demoBox && playable.length) body += playable.map((x) => `${demoNote(x.account_id)}${billForm(x.account_id, true)}`).join("");
+    else if (demoBox && playable.length === 1) body += `${demoNote(playable[0].account_id)}${billForm(playable[0].account_id, true)}`;
+    else if (demoBox && playable.length) {
+      // Several payees: one form, pick which one sends the bill.
+      body += `<p class="demo"><span class="demo__tag">Demo only</span> ${esc(playable.map((x) => payeeOf(p, x.account_id)).join(", ").replace(/, ([^,]*)$/, " and $1"))} are made up, so you do their part here. In real use, each one sends its own bill from its own account. This uses their limited demo keys, which can send bills and confirm payments but can never move money.</p>${billForm(playable[0].account_id, true, playable.map((x) => x.account_id))}`;
+    }
     else if (!done) body += `<p class="small">Waiting for the bill.</p>`;
+  }
+
+  const otherChain = p.id === INTENTS_BOX ? "" : `<details class="more intents-more"><summary>Giving from another chain? See a live NEAR Intents price</summary>${intentsQuoteForm(true)}</details>`;
+  if (!p.raised || BigInt(p.raised) === 0n) { if (live) body += otherChain; }
+
+  // Giving, once a box already has money: always visible, never hidden.
+  if (live && BigInt(p.raised) > 0n) {
+    const room = BigInt(p.target) - BigInt(p.raised);
+    body += room > 0n
+      ? `<details class="more give-more"><summary>Give to this box: it still needs ${money(room)}</summary>${me ? giveForm("Give") : signInFirst("give")}</details>${otherChain}`
+      : `<p class="small">This box has reached its target of ${money(p.target)}, so it takes no more gifts.</p>`;
   }
 
   // Everything else, out of the way.
@@ -1073,7 +1097,6 @@ async function renderActions(p) {
   if (me) {
     more.push(`<p>Signed in as <strong>${esc(me)}</strong>. You have <strong>${money(bal)}</strong>.</p>`);
     if (bal + 500_000_000n <= 1_000_000_000n) more.push(`<p><button class="button button--quiet" type="button" data-act="dollars" data-registered="${registered}">Get 500 test dollars</button></p>`);
-    if (live && BigInt(p.raised) > 0n) more.push(`<h3>Give more</h3>${giveForm("Give")}`);
     more.push(`<p><button class="link" type="button" data-act="signout">Sign out</button></p>`);
   }
   box.innerHTML = `<div class="slip__head"><h2 id="act-h">${title}</h2></div>${body}
@@ -1081,11 +1104,14 @@ async function renderActions(p) {
     ${more.length ? `<details class="more"><summary>Other actions</summary>${more.join("")}</details>` : ""}`;
   const msg = box.querySelector("[data-msg]");
 
-  function billForm(payee, play) {
-    return `<form data-bill data-payee="${esc(payee)}" data-play="${play}" class="mini">
+  function billForm(payee, play, choices = []) {
+    const pick = choices.length > 1
+      ? `<label class="field"><span class="field__label">Send the bill as</span><select name="payee">${choices.map((a) => `<option value="${esc(a)}">${esc(payeeOf(p, a))}</option>`).join("")}</select></label>`
+      : "";
+    return `<form data-bill data-payee="${esc(payee)}" data-play="${play}" class="mini">${pick}
       <label class="field"><span class="field__label">Amount</span><span class="amount-row"><input name="amount" type="number" min="0.01" step="any" value="${Math.min(Number(BigInt(p.held) / 1_000_000n) || 50, 280)}"><span>tUSD</span></span></label>
       <label class="field"><span class="field__label">What it's for</span><input name="note" maxlength="80" placeholder="What the bill is for" value=""></label>
-      <button class="button" type="submit">${play ? `Send a bill as ${esc(payeeOf(p, payee))}` : "Send the bill"}</button></form>`;
+      <button class="button" type="submit">${play && !pick ? `Send a bill as ${esc(payeeOf(p, payee))}` : "Send the bill"}</button></form>`;
   }
 
   async function run(label, fn) {
@@ -1123,7 +1149,7 @@ async function renderActions(p) {
       return run("Confirm it in your wallet…", () => give(p.id, amount, f.get("part") || "purpose"));
     }
     if (e.target.matches("[data-bill]")) {
-      const payee = e.target.dataset.payee;
+      const payee = f.get("payee") || e.target.dataset.payee;
       const note = String(f.get("note") || "").trim() || "Payment";
       if (e.target.dataset.play === "true") {
         return run("Sending with the demo key…", () => playPayee(payee, "request_payment", { pot_id: p.id, amount: String(amount), note }));

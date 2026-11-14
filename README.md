@@ -2,13 +2,23 @@
 
 **Money with rules.**
 
-Parents send school fees. The money can only pay the school, and the student gets a pass that proves it.
+Send money for a purpose. Purpose Split makes sure it can only reach approved recipients, under rules enforced by a contract on NEAR.
 
-Purpose Split is a money box on NEAR. Money raised for a purpose can only reach the payees named on the box, only against their own bills. When a payee confirms it was paid, the contract issues a pass: an NFT nobody can buy, fake or move, which exists only because the school confirmed the fees were paid. Whatever isn't used goes back to everyone who gave. The contract is also ready to receive gifts through NEAR Intents and credit them to the real giver.
+Parents send school fees: the money can only pay the school, and the student gets a pass that proves it.
+
+Every contribution is accounted for. Every payment follows the purpose.
 
 Every claim below can be checked against the live chain with one command, `node scripts/verify.mjs`, which needs no keys and no wallet.
 
 **Try it:** [purpose-split-web.vercel.app](https://purpose-split-web.vercel.app) (NEAR testnet, test dollars with no value)
+
+**Watch the demo (3 minutes):** [youtu.be/FnT44Iii2To](https://youtu.be/FnT44Iii2To)
+
+<p>
+<img src="docs/home.png" alt="The Purpose Split homepage" width="49%">
+<img src="docs/refused.png" alt="Try to cheat: sending the school fees to a betting site is refused by the contract" width="24%">
+<img src="docs/pass.png" alt="A Fees paid pass, issued when the school confirmed the payment" width="24%">
+</p>
 
 ## The problem
 
@@ -69,6 +79,13 @@ Removing works the same way, with "Propose removing" on the Payees page. If ever
 
 In this demo the payees are made up, so their evidence links use the reserved `.example` domain and don't open a real page.
 
+## How people get started
+
+- **A payee** (a school, a hospital, a shop) makes a free NEAR account, shows it on a page it already runs, and is voted onto the verified list. That is a one-time step. On mainnet it would be paid in USDC; cashing out to local currency is on the roadmap.
+- **The person running a box** needs a NEAR wallet, the way someone today opens a group account or a fundraising page. Everyone else just gets a link.
+- **Givers** need a NEAR account so refunds have somewhere to go, but the aim is that they never have to hold NEAR: through NEAR Intents they can pay with what they already have on other chains (USDT on Tron, USDC on Base or Solana), an app can cover NEAR's small network fees, and paying in by bank or card is on the roadmap.
+- **On this testnet demo**, everyone uses a NEAR testnet wallet. [How to try it](https://purpose-split-web.vercel.app/#/try) takes about five minutes.
+
 ## Why it fits its tracks
 
 **Social Money: coordinate value together.** A money box is a shared budget with rules. Families and neighbours put money in together, and a **Sputnik DAO** decides what only a group should decide: the street's neighbours vote to pay the electrician, and the payee council votes payees onto the verified list. Everyone is a **named account** (`llu.purposesplit.testnet`, not `0x7a3f…`), and a pass gives reputation-based access: proof of paid fees that an exam hall or a hostel gate can check.
@@ -94,7 +111,7 @@ What it doesn't do: a pass doesn't own money, earn or hold items. It is proof, n
 - **Limited keys.** A NEAR key can be restricted to a few contract methods. The demo school's key can only send bills and confirm payments; it can't move money. That is why any visitor can "play the school" on the website, with nothing to install.
 - **Standard tokens.** Money is NEP-141, passes are NEP-171 NFTs that refuse to move, and every action emits NEP-297 events.
 - **Free views.** Anyone can ask the contract why a payment would be refused (`why_refused`), with no wallet and no fee. That powers "Try to cheat".
-- **NEAR Intents ready.** Through Intents, tokens arrive from `intents.near`, not from the person paying. The money box takes the real giver from the delivery message (`{"pot_id": 7, "giver": "uncle.near"}`) and credits the gift and any refund to them. It never bounces tokens back to the go-between: anything that can't go in the box is kept as owed to the giver, to withdraw any time. Intents runs only on mainnet, so on testnet a stand-in account plays `intents.near` (`node scripts/intents-sim.mjs`, recorded in `proof/intents-sim.json`, box 7); 7 tests cover it. Box 7 also asks NEAR Intents for a **live mainnet price**: under **Give from another chain**, pick what a relative abroad holds (USDC on Base, Solana, Ethereum or Arbitrum, or USDT on Tron) and see what would arrive as USDC on NEAR. It is a dry quote from the 1Click API (`web/api/intents.js`), so it prices the route and sends nothing.
+- **NEAR Intents ready.** Through Intents, tokens arrive from `intents.near`, not from the person paying. The money box takes the real giver from the delivery message (`{"pot_id": 7, "giver": "uncle.near"}`) and credits the gift and any refund to them. It never bounces tokens back to the go-between: anything that can't go in the box is kept as owed to the giver, to withdraw any time. Intents runs only on mainnet, so on testnet a stand-in account plays `intents.near` (`node scripts/intents-sim.mjs`, recorded in `proof/intents-sim.json`, box 7); 7 tests cover it. Box 7 also asks NEAR Intents for a **live mainnet price**: under **Give from another chain**, pick what a relative abroad holds (USDC on Base, Solana, Ethereum or Arbitrum, or USDT on Tron) and see what would arrive as USDC on NEAR. It is a dry quote from the 1Click API (`web/api/intents.js`), so it prices the route and sends nothing. **It only gets prices:** NEAR Intents doesn't work on testnet, so no money can be sent through it here. The same price check sits under the Give button on every box that can still take gifts.
 
 ## For example
 
@@ -144,13 +161,34 @@ These are examples. The same rules work for any purpose with a named payee: rent
 | The code on chain is the code in this repository | `node scripts/verify.mjs` compares the contract's code hash with `build/purpose_split.wasm`, which `scripts/build.sh` rebuilds byte for byte |
 | Every rule has a test | `cargo test`: 97 tests |
 
+**Five transactions to open in the explorer**, from the recorded test run on the final contract:
+
+| What happens | Transaction |
+|---|---|
+| A parent gives 200 to the school-fees box | [FJYoEq…dkg1](https://testnet.nearblocks.io/txns/FJYoEqGnYhon97TX1zxYEzyebeP1AvMegRN3A1cxdkg1) |
+| The student tries to send the fees to himself: **refused** | [75WPdi…U9H5](https://testnet.nearblocks.io/txns/75WPdioWv2YWzHP3odHozyvypYA4FSwRhNkATwBrU9H5) |
+| The student pays the school's bill of 280 | [5sGZah…e1Qs](https://testnet.nearblocks.io/txns/5sGZahA1kcjg8fmLTuwJAHdKefh8qf4Mzf6ECLkce1Qs) |
+| The school confirms it was paid, and the pass is issued | [9FX4Qe…41cb](https://testnet.nearblocks.io/txns/9FX4QexYjd5RdYmFsxczctV7wUScX7yxJdNQ7YNB41cb) |
+| After the deadline, anyone closes the box: the unused 20 goes back to the parent and the uncle | [ESWy2A…gqzt](https://testnet.nearblocks.io/txns/ESWy2AByWGZNKVJQQEQdc2VfWADQy5tXZyVKa5uGgqzt) |
+
 ## Status (14 Nov)
+
+| Part | State |
+|---|---|
+| Money box contract, with its rules, refunds and passes | **Live** on testnet; the code on chain matches this repository |
+| Payee council and street votes | **Live**, two real Sputnik DAOs |
+| The pass and the `has_paid` check | **Live** |
+| Website | **Live**, reads and writes the testnet contract |
+| NEAR Intents prices | **Live**, real mainnet quotes; prices only, nothing is sent |
+| NEAR Intents gifts into a box | **Shown with a stand-in** on testnet (Intents runs only on mainnet) |
+| Mainnet, real payees, local currency in and out | **Not built yet** (see the roadmap) |
+
 
 - The final contract is [`pots.purposesplit.testnet`](https://testnet.nearblocks.io/address/pots.purposesplit.testnet) (version 0.4.0). The website and `verify.mjs` read it live.
 - The money box contract and the test-dollar token: 97 tests covering every rule, every cheating attempt, the pass, the handover to the council and gifts through NEAR Intents.
 - The two Sputnik DAOs are live, made with NEAR's own DAO factory: the payee council ([`purposesplit-council.sputnik-v2.testnet`](https://testnet.nearblocks.io/address/purposesplit-council.sputnik-v2.testnet)), with one real person on it, and the street ([`adeyemi-street.sputnik-v2.testnet`](https://testnet.nearblocks.io/address/adeyemi-street.sputnik-v2.testnet)), with five neighbours.
 - The full test run on the final contract: 85 steps, all 20 cheating attempts refused, real DAO proposals and votes, and the books balance. Every step and its transaction is in `proof/demo-final.json` and on the website's Proof page. The contract was then upgraded, with its state unchanged, to 0.3.0 to add NEAR Intents gifts and to 0.4.0 to add the `has_paid` access check, and box 7 was given to through a stand-in for Intents (`proof/intents-sim.json`). An earlier practice run on `pots-dev7.purposesplit.testnet` is kept in `proof/demo-dev.json`.
-- The website is live: wallet sign-in, "Try to cheat" against the real contract, example money boxes, starting your own, the Payees page (bills, verified list, council votes, proposing a payee), passes, CSV records, and a live NEAR Intents price for giving from another chain (box 7).
+- The website is live: wallet sign-in, "Try to cheat" against the real contract, example money boxes, starting your own, the Payees page (bills, verified list, council votes, proposing a payee), passes, CSV records, and a live NEAR Intents price for giving from another chain (box 7, and under Give on every box that can still take gifts).
 
 ## Try it from the command line
 
@@ -164,6 +202,22 @@ node demo.mjs final             # the three stories on testnet, with real DAO vo
 node intents-sim.mjs            # a gift through a stand-in for NEAR Intents (needs testnet keys)
 ```
 
+To run the website on your own computer: `cd web && python3 -m http.server 8000`, then open `http://localhost:8000`. Everything works except the NEAR Intents price, which needs the Vercel function (`npx vercel dev`).
+
+## How it fits together
+
+```mermaid
+flowchart LR
+  G["Givers"] -- "test dollars (USDC on mainnet)" --> C["Money box contract<br/>pots.purposesplit.testnet"]
+  K["Payee council<br/>(Sputnik DAO)"] -- "votes payees on or off the list" --> C
+  P["Payees<br/>(school, hospital, shop)"] -- "send bills, confirm payments" --> C
+  R["Who pays the bills<br/>(a person, or a street DAO)"] -- "pays a bill" --> C
+  C -- "pays only listed payees" --> P
+  C -- "issues a pass (NFT) to whoever paid" --> R
+  W["Website"] -- "reads live, sends transactions" --> C
+  W -- "live price (dry quote)" --> I["NEAR Intents<br/>(mainnet)"]
+```
+
 ## Layout
 
 ```
@@ -172,6 +226,8 @@ test-token/   test dollars (tUSD), a standard NEAR token with a "get test dollar
 scripts/      build, deploy, demo and verify scripts for testnet
 proof/        every step of the recorded runs, with transaction links
 web/          the website (plain HTML, CSS and JavaScript, reads the chain in the browser)
+web/api/      one Vercel function: asks NEAR Intents for live dry quotes
+docs/         the screenshots in this README
 web-src/      the bundle for NEAR Wallet Selector
 ```
 
@@ -182,7 +238,7 @@ web-src/      the bundle for NEAR Wallet Selector
 - **One council seat is held by the build,** so the test run can cast the first vote. The second seat is a real person's wallet, and the build holds no key for it, so nothing passes without that person's vote.
 - **Not locked.** The deployer still holds the contract's key, so a bug found during the hackathon can be fixed. That key could also deploy new code, so for now you trust that it won't; `verify.mjs` shows the running code matches this repository and reports the key. A real launch would delete the key, after which nobody could change the rules.
 - **Not audited.** Built and tested in a hackathon.
-- **NEAR Intents: live prices, no live payments.** Intents runs only on mainnet. Box 7 shows live mainnet prices (dry quotes, which send nothing), and the contract's handling of Intents deliveries is shown on testnet with a stand-in. No real cross-chain payment has been made, because there is no mainnet deployment yet.
+- **NEAR Intents: live prices, no live payments.** Intents runs only on mainnet, so on this testnet demo the website uses it only to get prices. Box 7 shows live mainnet prices (dry quotes, which send nothing), and the contract's handling of Intents deliveries is shown on testnet with a stand-in. No real cross-chain payment has been made, because there is no mainnet deployment yet.
 - **Not built yet:** a naira on-ramp, real schools on the list, and gasless confirmations for payees through meta transactions.
 
 ## Roadmap
