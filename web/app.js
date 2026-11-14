@@ -1650,7 +1650,8 @@ function openMenu() {
   menu.hidden = false;
   menuBtn.setAttribute("aria-expanded", "true");
   document.body.classList.add("menu-on");
-  (menu.querySelector('[aria-current="page"]') || menu.querySelector("a")).focus();
+  // Focus the panel itself, so no focus ring sits on a link after a mouse click; Tab still reaches every link.
+  menu.querySelector(".menu__inner").focus({ preventScroll: true });
 }
 
 function closeMenu() {

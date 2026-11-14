@@ -999,7 +999,9 @@ a.acct:hover { color: var(--ink); }
 .give-more { border-top: 1px dashed rgba(var(--rule-rgb), 0.45); margin-top: 18px; padding-top: 14px; }
 .give-more h3 { margin: 0 0 4px; }
 
-/* Menu polish: a card over a blurred page, taller rows, an arrow on each row */
+/* Menu polish, phones only: a card over a blurred page, taller rows, an arrow on each row.
+   PC keeps the original full menu. */
+@media (max-width: 620px) {
 .menu { background: rgba(31, 42, 39, 0.28); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); padding: 14px; }
 .menu__inner { min-height: 0; border-radius: 18px; box-shadow: 0 18px 50px rgba(15, 30, 26, 0.28); padding: 22px clamp(20px, 5vw, 40px) 26px; }
 .menu__inner::before { display: none; }
@@ -1018,9 +1020,13 @@ a.acct:hover { color: var(--ink); }
 @media (prefers-reduced-motion: reduce) { .menu__list a::after { transition: none; } }
 .menu__list a, .menu__list a:any-link { grid-template-columns: 2.4rem 1fr auto; row-gap: 0; }
 .menu__list a::after { grid-column: 3; grid-row: 1; }
+}
 
 /* Reveal on scroll (added by script only; see app.js) */
 .rv { opacity: 0; transform: translateY(16px); transition: opacity 420ms ease-out, transform 420ms ease-out; }
 .rv.rv--in { opacity: 1; transform: none; }
 @media (prefers-reduced-motion: reduce) { .rv { opacity: 1; transform: none; transition: none; } }
 @media print { .rv { opacity: 1; transform: none; } }
+
+/* The menu panel takes focus when opened, without drawing a ring */
+.menu__inner:focus { outline: none; }
