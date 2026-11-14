@@ -1033,6 +1033,9 @@ async function renderActions(p) {
   const payer = me === p.releaser ? "you" : group ? "the group, by a vote" : (SAY[p.releaser] || nameOf(p.releaser));
   const isPayee = (id) => p.payees.some((x) => x.account_id === id);
   const demoBox = !Object.values(LIVE).includes(p.id); // the open "try to cheat" boxes keep their one bill
+  // Playing a made-up payee is for our example boxes, or for the person who made or pays from this box.
+  // Visitors to someone else's box can't send bills or confirm payments on it.
+  const mayPlay = p.creator.endsWith(`.${ROOT}`) || (me && (me === p.creator || me === p.releaser));
   let bal = 0n, registered = false;
   if (me) {
     try {
@@ -1084,11 +1087,11 @@ async function renderActions(p) {
     title = `Next: ${esc(to)} confirms it got the money`;
     body = `<p>${money(x.amount)} was paid to ${esc(to)}. When ${esc(to)} confirms it arrived, the contract issues the pass.</p>`;
     if (me === x.to) body += `<p><button class="button" type="button" data-act="confirm" data-id="${x.i}">Confirm you received ${money(x.amount)}</button></p>`;
-    else if (canPlay(x.to)) body += `${demoNote(x.to)}<p><button class="button" type="button" data-act="playconfirm" data-to="${esc(x.to)}" data-id="${x.i}">Confirm as ${esc(to)}</button></p>`;
+    else if (mayPlay && canPlay(x.to)) body += `${demoNote(x.to)}<p><button class="button" type="button" data-act="playconfirm" data-to="${esc(x.to)}" data-id="${x.i}">Confirm as ${esc(to)}</button></p>`;
     else body += `<p class="small">Waiting for ${esc(to)}.</p>`;
   } else {
     const done = p.payments.length > 0;
-    const playable = p.payees.filter((x) => x.verified && canPlay(x.account_id));
+    const playable = mayPlay ? p.payees.filter((x) => x.verified && canPlay(x.account_id)) : [];
     title = done ? "Paid and confirmed" : `Next: ${esc(either(p.payees.map(payeeName)))} sends a bill`;
     body = done
       ? `<p>The payee confirmed it was paid, and the pass was issued. <a href="#/pass/${esc(p.releaser)}">See the pass</a>.</p><p>There is still ${money(p.held)} in the box. It can pay another bill, and what's left goes back to the givers after the deadline.</p>`
@@ -1109,7 +1112,7 @@ async function renderActions(p) {
   if (live && BigInt(p.raised) > 0n) {
     const room = BigInt(p.target) - BigInt(p.raised);
     body += room > 0n
-      ? `<details class="more give-more"><summary>Give to this box: it still needs ${money(room)}</summary>${me ? giveForm("Give") : signInFirst("give")}</details>${otherChain}`
+      ? `<section class="give-more" id="give-here"><h3>Give to this box</h3><p class="small">It still needs ${money(room)}.</p>${me ? giveForm("Give") : signInFirst("give")}</section>${otherChain}`
       : `<p class="small">This box has reached its target of ${money(p.target)}, so it takes no more contributions.</p>`;
   }
 
@@ -1668,9 +1671,7 @@ document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeMenu(
 // "Give to this box": open the give form in the action card and go to it.
 document.addEventListener("click", (e) => {
   if (!e.target.closest("[data-give-jump]")) return;
-  const more = document.querySelector(".give-more");
-  if (more) more.open = true;
-  const target = more || document.querySelector("form[data-give]") || document.querySelector("[data-actions]");
+  const target = document.querySelector(".give-more") || document.querySelector("form[data-give]") || document.querySelector("[data-actions]");
   if (!target) return;
   target.scrollIntoView({ behavior: "smooth", block: "center" });
   const input = target.querySelector("input[name=amount], button");
